@@ -1,0 +1,7 @@
+# Runtime secrets and state — never version these
+.claude/channels/
+.claude/scripts/logs/
+.claude/settings.local.json
+
+# Future: logs directory of the memory system (per SPEC.v3 operational conventions)
+logs/
