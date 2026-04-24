@@ -104,6 +104,14 @@ Implementation: Read → move `blocks[0]` to the end of `blocks[]` → rewrite `
 
 Before saving, scan the remaining pending blocks for a matching topic (same name core, same proposed type). If found, surface both and ask the owner which to keep. Do not silently merge queue blocks — that is the owner's call.
 
+## Threshold-latch maintenance
+
+`capture` sets a latch file `$GINARR_VAULT_ROOT/notes/.pending_notified` when the queue crosses 5 candidates upward, so the owner is pinged once per crossing. Review is responsible for clearing the latch on the downward crossing:
+
+- After any block removal (save, drop), count the remaining `## ` headings in `_pending.md`. If the count is **below 5** and `.pending_notified` exists → delete the latch. The next time the queue climbs back past 5, `capture` will re-notify.
+- Skip (rotate to tail) does not change the count — no latch action needed.
+- Edit that ends in save is just a save with an extra step; the same latch-clear rule applies.
+
 ## Write boundary
 
 `review-pending` writes the vault — both `notes/<type>/<file>.md` (new or merged) and `notes/_pending.md` (block removal, rotation). Unlike `recall`, it is not read-only. All writes happen at the explicit direction of the owner; never auto-merge on ambiguity.

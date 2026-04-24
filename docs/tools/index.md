@@ -4,7 +4,7 @@ Standalone CLI scripts that maintain the vault: dedup reports, search, archival.
 
 ## Location
 
-Scripts live in [`tools/`](../../tools/) at the repo root (version-controlled). SPEC.v3 / the roadmap originally placed them at `$GINARR_VAULT_ROOT/_tools/` for portability; keeping them under `tools/` in-repo preserves that portability (they are runtime-neutral — nothing in `.claude/` imports them) while gaining git tracking. If the operator wants them visible inside the vault, a symlink suffices:
+Scripts live in [`tools/`](../../tools/) at the repo root (version-controlled). SPEC.v3 originally placed them at `$GINARR_VAULT_ROOT/_tools/` for portability; keeping them under `tools/` in-repo preserves that portability (they are runtime-neutral — nothing in `.claude/` imports them) while gaining git tracking. If the operator wants them visible inside the vault, a symlink suffices:
 
 ```
 ln -s /path/to/repo/tools "$GINARR_VAULT_ROOT/_tools"

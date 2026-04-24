@@ -43,7 +43,7 @@ Stop and ask the owner before writing when:
 | `type` in frontmatter | Directory | What goes there |
 |---|---|---|
 | `user` | `notes/user/` | Facts about the owner. ("speaks Russian and English", "has a dog named Rex") |
-| `feedback` | `notes/feedback/` | Rules for how to work with the owner. ("don't summarize at the end", "roadmap stays in Russian") |
+| `feedback` | `notes/feedback/` | Rules for how to work with the owner. ("don't summarize at the end", "plan docs stay in Russian") |
 | `project` | `notes/projects/` | Ongoing initiatives with a lifecycle. ("marathon training — target Oct 2026") |
 | `reference` | `notes/reference/` | Pointers to external systems / people / places. ("bugs tracked in Linear INGEST", "ob sync daemon lives in ~/OpenClaw") |
 | `decision` | `notes/decisions/` | Point-in-time choices with rationale. ("chose Postgres over MySQL — need range types") |
@@ -105,6 +105,16 @@ status: confirmed                              # optional; default confirmed. Us
 ```
 
 Append via Read → rewrite with the new block appended → Write. Do not overwrite earlier candidates.
+
+### Threshold notification (≥5 pending)
+
+After any low-confidence append to `_pending.md`, count the `## ` headings in the file. Call that `N`.
+
+- `N >= 5` **and** `$GINARR_VAULT_ROOT/notes/.pending_notified` does **not** exist → send one short Telegram message to the owner: `Накопилось N кандидатов в /review — разберёшь?` (match the owner's recent language; default to Russian). Then create `.pending_notified` so the ping does not repeat at every subsequent capture while the queue stays above the threshold.
+- `N < 5` **and** `.pending_notified` exists → delete it. The flag is a latch — set once on the upward crossing of the threshold, cleared on the downward crossing.
+- No Telegram context on the current turn (no `<channel>` tag) → skip the notification. Do not write to stdout; proactive pings only make sense against a chat.
+
+Do not notify about individual high/medium-confidence saves — those surface via the 💾 reaction at save time. This notification is strictly for the `_pending.md` queue pressure.
 
 ## Conflict protocol
 

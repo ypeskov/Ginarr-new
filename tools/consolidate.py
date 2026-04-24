@@ -101,11 +101,11 @@ def main() -> int:
     parser.add_argument("--threshold", type=float, default=0.6,
                         help="Jaccard threshold for filename-token similarity (default: 0.6).")
     parser.add_argument("--apply", action="store_true",
-                        help="Not implemented yet — see roadmap §4.1.")
+                        help="Not implemented — merge proposals should be resolved via /review, not here.")
     args = parser.parse_args()
 
     if args.apply:
-        print("--apply is not yet implemented. See docs/roadmap.md §4.1.", file=sys.stderr)
+        print("--apply is not implemented; resolve merge candidates via /review.", file=sys.stderr)
         return 2
     if not args.vault_root:
         print("GINARR_VAULT_ROOT is not set and --vault-root was not provided.", file=sys.stderr)

@@ -27,7 +27,7 @@ Exits `0` on success (whether or not groups were found), `2` on config errors.
 
 Auto-merging loses information silently. The SPEC-aligned path is to surface candidates and let the owner resolve them through `/review` or by editing in Obsidian — `--apply` is reserved for a future iteration that writes proposals to a queue rather than mutating notes directly.
 
-`--apply` currently exits `2` with a pointer to roadmap §4.1.
+`--apply` currently exits `2` with a one-line stderr message — intentionally; merging is an owner-judgment action and belongs in `/review` (or manual editing in Obsidian), not this CLI.
 
 ## Tuning the threshold
 

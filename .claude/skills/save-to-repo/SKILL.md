@@ -4,9 +4,8 @@ description: >
   Commit (and optionally push) local changes for the Ginarr repo following
   project conventions. Use whenever the user asks to commit, save changes,
   push, "закоммить", "коммить", "пушни", or "сохрани в репу". Enforces
-  English-only messages, no AI co-author footer, bundled docs/roadmap
-  updates, inline git identity, and a workaround for the Layer 1 denylist
-  trap.
+  English-only messages, no AI co-author footer, bundled docs updates,
+  inline git identity, and a workaround for the Layer 1 denylist trap.
 metadata:
   project: Ginarr
   version: "1.0"
@@ -22,7 +21,7 @@ Runs the commit (and optional push) workflow for this repository. The rules belo
 
 2. **Messages are in English.** Subject and body are always English per CLAUDE.md Ground rules, regardless of the conversation language.
 
-3. **One commit bundles code + matching docs + parent `index.md`.** If a commit touches a script, hook, or skill under `.claude/`, the matching `docs/<…>.md` and its parent `docs/*/index.md` go in the **same commit**. If the change lands a roadmap item, tick its checkbox in `docs/roadmap.md` in the **same commit**.
+3. **One commit bundles code + matching docs + parent `index.md`.** If a commit touches a script, hook, or skill under `.claude/`, the matching `docs/<…>.md` and its parent `docs/*/index.md` go in the **same commit**.
 
 4. **Git identity is inline.** This repo has no configured `user.name` / `user.email`. Inject them per-commit:
    ```

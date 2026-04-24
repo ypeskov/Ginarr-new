@@ -59,6 +59,10 @@ Freeform natural-language edits: type change, path change, body rewrite, or comb
 
 See the skill doc for the full table. Short version: 💾 reaction on save actions, 👌 on drop/skip, no reaction on the candidate prompt itself.
 
+## Threshold-latch maintenance
+
+`capture` pings the owner once when the queue crosses 5 candidates upward, using `$GINARR_VAULT_ROOT/notes/.pending_notified` as a latch. Every time `/review` removes a block (save or drop), the skill checks the remaining count and deletes the latch if it is below 5, so the next accumulation triggers a fresh ping. Skip does not change the count, so it leaves the latch alone.
+
 ## Relationship to the other memory skills
 
 - `capture` writes the queue.
@@ -67,8 +71,7 @@ See the skill doc for the full table. Short version: 💾 reaction on save actio
 
 ## Not yet implemented
 
-- **Threshold notification** — when the queue grows past ~5 candidates, ping the owner proactively. Planned as a sub-phase per the roadmap, not in this MVP.
-- **Inline keyboard UI** — Telegram supports button-based prompts; the MVP keeps text-only actions for portability.
+- **Inline keyboard UI** — Telegram supports button-based prompts; the current setup keeps text-only actions for portability across non-Telegram channels.
 
 ## Testing
 

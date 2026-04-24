@@ -43,6 +43,10 @@ Directory-name asymmetry (`projects/decisions/` plural, `project/decision` singu
 
 The reaction-only path for high-confidence saves is deliberate: it shows *that* something was captured without pushing a notification to the owner's phone and without re-leaking the content into the visible reply (which would itself end up in the log).
 
+## Threshold notification
+
+When a low-confidence block lands in `_pending.md` and the queue reaches 5 candidates, `capture` sends one proactive Telegram message: `Накопилось N кандидатов в /review — разберёшь?`. To avoid spamming every subsequent capture, the skill touches `$GINARR_VAULT_ROOT/notes/.pending_notified` as a latch; it fires again only after the queue has dropped back below 5 (cleared by `review-pending` on save/drop) and risen back above. Terminal-only turns (no `<channel>` tag) are silent — there is no chat to ping.
+
 ## Dedup
 
 One topic = one file. Before every write the skill greps `$GINARR_VAULT_ROOT/notes/` for topic keywords and reads any matches. Duplicates become updates; contradictions trigger the conflict protocol (keep both claims with dates, `status: unconfirmed`, ask the owner).
