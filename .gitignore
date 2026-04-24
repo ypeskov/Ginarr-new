@@ -9,3 +9,6 @@ __pycache__/
 
 # Future: logs directory of the memory system (per SPEC.v3 operational conventions)
 logs/
+
+# Skill runtime outputs — regenerated on every run
+.claude/skills/news-digest/last_digest.md
