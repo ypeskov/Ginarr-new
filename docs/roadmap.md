@@ -52,10 +52,13 @@
 
 ### 3.1 `capture` skill
 
-- [ ] `.claude/skills/capture/SKILL.md` по SPEC §"Capture rules": high/medium/low confidence, always-ask-immediately, never-save.
-- [ ] Агент делает dedup через grep по `$VAULT_ROOT/notes/`, пишет/обновляет `notes/<type>/<snake_case>.md` с YAML frontmatter.
-- [ ] Low-confidence → апенд в `notes/_pending.md`.
-- [ ] Доки: `docs/skills/capture.md`.
+- [x] `.claude/skills/capture/SKILL.md` — триаж по SPEC-таблице (high/medium/low + always-ask overrides + never-save). Триггер-описание: факт о себе / предпочтение / фидбек / решение / явное «запомни». Операционные вопросы и код-таски явно отсечены.
+- [x] Dedup: grep по `$GINARR_VAULT_ROOT/notes/`, Read матчей, Write нового/обновлённого файла. Frontmatter по SPEC (type/name/description/created/updated + опциональные tags/source/status/supersedes).
+- [x] Low-confidence → апенд в `_pending.md` по шаблону, который уже зашит в файле.
+- [x] Telegram-фидбек: 💾-реакция для high (silent, без текста), 💾+короткий ответ с путём для medium, тишина для low, прямой вопрос для always-ask. Fallback 💾 → 🧠 → 👌.
+- [x] **Поправка к SPEC.v3:** заведена директория `notes/reference/` — в SPEC `reference` был во frontmatter, но дира не значилась. Формализовать в SPEC v4.
+- [x] Явно разделено: Ginarr-vault (owner-facing, в Obsidian) vs. Claude private auto-memory (приватный ноутбук между сессиями).
+- [x] Доки: `docs/skills/capture.md`, апдейт `docs/skills/index.md`.
 
 ### 3.2 `recall` skill
 
