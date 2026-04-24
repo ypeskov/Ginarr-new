@@ -2,5 +2,19 @@
   "statusLine": {
     "type": "command",
     "command": "bash /home/krokobot/Ginarr/.claude/scripts/statusline.sh"
+  },
+  "hooks": {
+    "UserPromptSubmit": [
+      {"hooks": [{"type": "command", "command": "python3 /home/krokobot/Ginarr/.claude/scripts/log_event.py --event user"}]}
+    ],
+    "Stop": [
+      {"hooks": [{"type": "command", "command": "python3 /home/krokobot/Ginarr/.claude/scripts/log_event.py --event assistant"}]}
+    ],
+    "SessionStart": [
+      {"hooks": [{"type": "command", "command": "python3 /home/krokobot/Ginarr/.claude/scripts/log_event.py --event session-start"}]}
+    ],
+    "SessionEnd": [
+      {"hooks": [{"type": "command", "command": "python3 /home/krokobot/Ginarr/.claude/scripts/log_event.py --event session-end"}]}
+    ]
   }
 }

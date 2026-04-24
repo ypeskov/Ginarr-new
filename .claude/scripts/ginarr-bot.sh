@@ -7,6 +7,14 @@ export HOME=/home/krokobot
 export PATH="$HOME/.bun/bin:$HOME/.local/bin:/home/linuxbrew/.linuxbrew/bin:/usr/local/bin:/usr/bin:/bin:$PATH"
 export TELEGRAM_STATE_DIR="$HOME/Ginarr/.claude/channels/telegram"
 
+ENV_FILE="$HOME/Ginarr/.claude/.env"
+if [[ -f "$ENV_FILE" ]]; then
+    set -a
+    # shellcheck disable=SC1090
+    source "$ENV_FILE"
+    set +a
+fi
+
 cd "$HOME/Ginarr"
 
 # --continue: resume last session context from ~/.claude/projects/<proj>/

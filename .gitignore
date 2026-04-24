@@ -2,6 +2,9 @@
 .claude/channels/
 .claude/scripts/logs/
 .claude/settings.local.json
+.env
+.env.*
+__pycache__/
 
 # Future: logs directory of the memory system (per SPEC.v3 operational conventions)
 logs/
