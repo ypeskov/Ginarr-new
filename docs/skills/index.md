@@ -1,0 +1,18 @@
+# Skills
+
+Agent Skills available in this project, all under `.claude/skills/<name>/`. Each skill is authoritative in its own `SKILL.md`; this index is just a pointer list.
+
+## Installed
+
+- **`create-skill`** — scaffolds a new skill following the [agentskills.io](https://agentskills.io/specification) spec. Source: copied from OpenClaw. Authoritative doc: [`.claude/skills/create-skill/SKILL.md`](../../.claude/skills/create-skill/SKILL.md).
+
+## Not yet built
+
+Planned per SPEC.v3. Each will get its own entry here when added:
+
+- `capture` — decides whether a statement is worth saving and to which note type/file.
+- `recall` — searches `notes/` and `logs/` before answering.
+- `review` — walks through `notes/_pending.md` candidates with confirm / drop / edit.
+- `consolidate` — wraps the consolidation CLI tool (dry-run → review → apply).
+- `redact` — handles `/redact <value>` for the Layer 3 denylist.
+- `nolog` — pauses the write-path via `log_paused` / `log_resumed` system events.

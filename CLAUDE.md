@@ -1,8 +1,12 @@
 # Ginarr — chat-memory
 
-A vendor-neutral long-term memory system for a single-user, always-on LLM personal assistant. Current state: **specification only, no implementation yet.**
+## Ground rules (read first)
 
-The canonical spec is `SPEC.v3.md`. Earlier drafts (`SPEC.md` = v1, `SPEC.v2.md`) are kept for history — do not edit them. New revisions go as `SPEC.vN.md`.
+- **Language.** All documentation, comments, commit messages, code identifiers, and other artifacts committed to this repo are in **English**. Conversation with the user is not covered by this rule and may be in any language.
+- **Docs stay in sync.** Operator documentation lives under [`docs/`](docs/index.md). Every directory there carries an `index.md`. When you add, modify, or remove a script, hook, or skill, update the matching doc **and** the parent `index.md` in the **same commit** that touches the code. Out-of-date docs are worse than missing ones.
+- **Current bot state lives in `docs/`, not here.** `CLAUDE.md` holds stable project conventions and invariants; the moving target (what's wired right now) is maintained there.
+
+A vendor-neutral long-term memory system for a single-user, always-on LLM personal assistant. The canonical spec is `SPEC.v3.md`. Earlier drafts (`SPEC.md` = v1, `SPEC.v2.md`) are kept for history — do not edit them. New revisions go as `SPEC.vN.md`.
 
 ## What this project is
 
@@ -16,19 +20,11 @@ No embeddings, no vector DB, no vendor-specific storage.
 - **Supported migration targets** (same skill/agent format): Junie, OpenCode with the `oh-my-opencode` plugin.
 - **Out of scope:** Cursor (different skill model). Do not produce Cursor-specific advice.
 
-## Planned directory layout
+## Directory layout
 
-Not created yet. Per `SPEC.v3.md`:
+Behavior (scripts, hooks, skills) lives in **this repo** under `.claude/`. Data (logs, notes) lives in a **separate** vault at `$GINARR_VAULT_ROOT` — by default `~/obsidian-vaul/chat-memory/`. The split is deliberate: data is format-portable and long-lived; behavior is runtime-specific and replaceable.
 
-```
-chat-memory/
-├── _tools/       Python scripts, no LLM-SDK deps (redactor.py, consolidate.py, search.py, archive.py)
-├── skills/       Agent Skills (SKILL.md with frontmatter)
-├── agents/       Subagent definitions
-├── logs/         JSONL event log, sharded YYYY/MM/YYYY-MM-DD.jsonl
-│   └── YYYY/MM/attachments/   binary attachments colocated with day's log
-└── notes/        Curated knowledge (user/, feedback/, projects/, decisions/, archive/)
-```
+Current wiring is documented in [`docs/architecture.md`](docs/architecture.md). SPEC.v3's original layout put `skills/`, `agents/`, and `_tools/` inside the vault — that is superseded, pending formalisation in SPEC v4.
 
 ## Core design principles
 
@@ -67,6 +63,6 @@ Read `SPEC.v3.md` for the full spec. These are the load-bearing invariants — d
 - Co-authored commits with Claude are acceptable (see initial commit for format).
 - Default branch: `main`.
 
-## Current open questions / next steps
+## Current state
 
-None pending at the spec level — all 16 review questions resolved in v3. Implementation work (scripts in `_tools/`, skills in `skills/`, bot wiring) has not started.
+See [`docs/`](docs/index.md) — tracked there alongside the code it describes.
