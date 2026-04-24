@@ -73,22 +73,22 @@
 - [ ] Threshold-нотификация (≥5 кандидатов) — следующим подэтапом.
 - [x] Доки: `docs/skills/review.md`, апдейт `docs/skills/index.md` (review переехал из Not yet built в Installed).
 
-## Этап 4 — обслуживание (`_tools/`)
+## Этап 4 — обслуживание (`tools/`)
 
-Живут в `$VAULT_ROOT/_tools/` (портируемо, не в `.claude/`), без LLM-SDK зависимостей.
+Живут в `tools/` в корне репы (под git), pure Python stdlib, без LLM-SDK зависимостей. SPEC.v3 изначально говорил `$VAULT_ROOT/_tools/` — решено перенести в репу для version control без потери портативности (скрипты рантайм-нейтральны, ничего из `.claude/` их не импортирует). Оператор может симлинкнуть в вольт, если хочет их там видеть. Будет формализовано в SPEC v4 вместе с аналогичным переездом skills/agents.
 
 ### 4.1 `consolidate.py`
 
-- [ ] `--dry-run` / `--apply`, ищет дубли по topic / tags, предлагает merge.
-- [ ] Первый прогон только dry-run. Планирование через системный cron.
+- [x] Dry-run репорт дублей по Jaccard-сходству токенов имён файлов (`--threshold`, default 0.6) и/или тегов. Группирует по общему `type`; скипает `_*.md` и `archive/`. Пропускает мусор в frontmatter без падения.
+- [x] `--apply` пока — заглушка с понятным stderr и exit 2; мёрдж отдан на явный owner-флоу (`/review` или руками в Obsidian), чтобы не терять инфу автоматически. Планирование через системный cron.
 
 ### 4.2 `search.py`
 
-- [ ] Обёртка над grep с пониманием frontmatter: `--scope notes|logs --since <date>`.
+- [x] CLI: `search.py <query> [--scope notes|logs|both] [--since <date>] [--type …] [--tag …] [--json]`. Notes фильтруются по frontmatter (`type`/`tag`), logs — по дате в имени файла (`YYYY-MM-DD.jsonl`). Подстроковый поиск (case-insensitive), escape перед regex. JSON-выход для пайплайнов.
 
 ### 4.3 `archive.py`
 
-- [ ] `--older-than <duration>` — переносит retired проекты в `notes/archive/`.
+- [x] CLI: `archive.py --older-than <Nd|Nw|Nmo|Ny> [--type project] [--apply]`. Кандидат = `status: retired|archived` **и** `updated` ≤ cutoff. Целевой путь — `notes/archive/<оригинальный-rel-path>`, субдиректории сохраняются. По умолчанию dry-run; `--apply` делает реальный `shutil.move`.
 
 ## Отложено
 
