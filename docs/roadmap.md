@@ -1,97 +1,98 @@
-# Implementation roadmap
+# Дорожная карта реализации
 
-Sequenced plan for bringing Ginarr to feature-parity with SPEC.v3. Phases are ordered by dependency: earlier phases unblock later ones.
+Последовательный план по доведению Ginarr до SPEC.v3. Этапы упорядочены по зависимостям: ранние разблокируют поздние.
 
-This file is the persistent plan across sessions. When a phase lands, strike it through and link the PR/commit so future sessions can see what remains.
+Этот файл — долгоживущий план, переживает компакты сессии. Когда пункт сделан — отмечай `[x]` **в том же коммите**, в котором лэндится работа. Пустой чекбокс `[ ]` = ещё не начат / в работе.
 
-See also:
-- [`TODO.md`](../TODO.md) — deferred features not yet scheduled.
-- [`architecture.md`](architecture.md) §"What is NOT here yet" — current gaps at a glance.
+См. также:
+- [`TODO.md`](../TODO.md) — фичи, отложенные без расписания.
+- [`architecture.md`](architecture.md) §"What is NOT here yet" — кратко текущие пробелы.
 
-## Baseline (already built)
+## Baseline (уже сделано)
 
-- Write-path via hooks: `log_event.py` wired to `UserPromptSubmit` / `Stop` / `SessionStart` / `SessionEnd`, writing `logs/YYYY/MM/YYYY-MM-DD.jsonl`.
-- `redactor.py` — Layer 2 (regex) + Layer 3 (denylist file). Layer 3 is **not yet wired** into the hook invocation.
-- `create-skill` skill (scaffolding helper copied from OpenClaw).
-- Telegram attachments currently land in the log as raw `<channel …>` tags — not SPEC-compliant.
+- [x] Write-path через хуки: `log_event.py` на `UserPromptSubmit` / `Stop` / `SessionStart` / `SessionEnd`, пишет `logs/YYYY/MM/YYYY-MM-DD.jsonl`.
+- [x] `redactor.py` — Layer 2 (regex) подключён к хуку через `log_event.py`. Layer 3 (denylist-файл) — реализован как инструмент, но **не подключён** к runtime-пути (см. 2.2).
+- [x] `create-skill` — скаффолд скилов, скопирован из OpenClaw.
+- [x] `docs/` + `.env.example` + `TODO.md`.
 
-## Phase 1 — Safety and log fidelity
+## Этап 1 — безопасность и верность лога
 
 ### 1.1 Layer 1 — PreToolUse denylist
 
-- New hook script `pre_tool_denylist.py`, registered in `settings.json` under `PreToolUse` (matcher: `Read|Bash|Edit|Write`).
-- Denylist from SPEC §"Secrets and PII": `.env*`, `*.pem`, `*.key`, `id_rsa*`, `credentials*`, `~/.ssh/**`, `~/.aws/**`, `~/.config/gcloud/**`, `~/.kube/config`.
-- On match: deny the tool call with `[REDACTED: path in denylist]` in `permissionDecisionReason`.
-- Docs: update `docs/hooks.md`, add `docs/scripts/pre_tool_denylist.md`.
+- [ ] Новый хук `pre_tool_denylist.py`, регистрация в `settings.json` на `PreToolUse` (matcher: `Read|Bash|Edit|Write`).
+- [ ] Denylist из SPEC §"Secrets and PII": `.env*`, `*.pem`, `*.key`, `id_rsa*`, `credentials*`, `~/.ssh/**`, `~/.aws/**`, `~/.config/gcloud/**`, `~/.kube/config`.
+- [ ] При матче: deny с `[REDACTED: path in denylist]` в `permissionDecisionReason`.
+- [ ] Доки: обновить `docs/hooks.md`, создать `docs/scripts/pre_tool_denylist.md`.
 
 ### 1.2 Attachment markers
 
-- In `log_event.py` for `user` events: parse `<channel>` tags, find `image_path` / `attachment_file_id`, copy the file to `$VAULT_ROOT/logs/YYYY/MM/attachments/YYYY-MM-DD_<sha8>.<ext>`, replace the tag in content with `[image: attachments/…]` / `[file: …]` / `[audio: …]`.
-- Docs: update `docs/hooks.md` and `docs/scripts/log_event.md`.
+- [ ] В `log_event.py` для `user`-ивентов: парсить `<channel>` теги, доставать `image_path` / `attachment_file_id`, копировать файл в `$VAULT_ROOT/logs/YYYY/MM/attachments/YYYY-MM-DD_<sha8>.<ext>`.
+- [ ] Подменять `<channel>` в `content` на `[image: attachments/…]` / `[file: …]` / `[audio: …]`.
+- [ ] Доки: обновить `docs/hooks.md` и `docs/scripts/log_event.md`.
 
-## Phase 2 — Write-path runtime controls
+## Этап 2 — runtime-контроль записи
 
 ### 2.1 `/nolog` — Layer 4
 
-- Slash command in `.claude/commands/nolog.md`, accepts `on | off`.
-- State stored in `.claude/channels/.nolog` (flag file, cleared on `bot_started`).
-- `log_event.py` checks the flag on entry. When set: skip writes for `user` / `assistant`; on state transitions, emit `system:log_paused` / `log_resumed`.
-- Docs: `docs/skills/nolog.md`.
+- [ ] Slash-команда `.claude/commands/nolog.md`, принимает `on | off`.
+- [ ] Флаг в `.claude/channels/.nolog` (чистится при `bot_started`).
+- [ ] `log_event.py`: проверяет флаг на входе; при активной паузе — пропускает `user`/`assistant`; на переходах эмитит `system:log_paused` / `log_resumed`.
+- [ ] Доки: `docs/skills/nolog.md`.
 
-### 2.2 `/redact` — Layer 3 wiring
+### 2.2 `/redact` — подключение Layer 3
 
-- Slash command in `.claude/commands/redact.md`: `/redact <value>` appends `value` to `.claude/channels/.redact-list`.
-- `log_event.py` passes that file's path into `redactor.py` when calling `redact()`.
-- File is cleared on `bot_started` (handled inside `log_event.py --event session-start`).
-- Docs: `docs/skills/redact.md`.
+- [ ] Slash-команда `.claude/commands/redact.md`: `/redact <value>` апендит `value` в `.claude/channels/.redact-list`.
+- [ ] `log_event.py`: передаёт путь этого файла в `redactor.py` при вызове `redact()`.
+- [ ] Файл чистится при `bot_started` (внутри `log_event.py --event session-start`).
+- [ ] Доки: `docs/skills/redact.md`.
 
-## Phase 3 — Memory skills (capture / recall / review)
+## Этап 3 — память (skill'ы capture / recall / review)
 
 ### 3.1 `capture` skill
 
-- `.claude/skills/capture/SKILL.md` encoding SPEC §"Capture rules": high / medium / low confidence, always-ask-immediately triggers, never-save list.
-- Agent deduplicates via grep over `$VAULT_ROOT/notes/`, writes or updates `notes/<type>/<snake_case>.md` with YAML frontmatter.
-- Low-confidence candidates go to `notes/_pending.md`.
-- Docs: `docs/skills/capture.md`.
+- [ ] `.claude/skills/capture/SKILL.md` по SPEC §"Capture rules": high/medium/low confidence, always-ask-immediately, never-save.
+- [ ] Агент делает dedup через grep по `$VAULT_ROOT/notes/`, пишет/обновляет `notes/<type>/<snake_case>.md` с YAML frontmatter.
+- [ ] Low-confidence → апенд в `notes/_pending.md`.
+- [ ] Доки: `docs/skills/capture.md`.
 
 ### 3.2 `recall` skill
 
-- `.claude/skills/recall/SKILL.md`: before answering retrospective questions ("what did I say / decide / …"), grep `notes/` first, then `logs/YYYY/` with an explicit date scope.
-- Helper for local→UTC conversion for questions like "yesterday around 2pm".
-- Docs: `docs/skills/recall.md`.
+- [ ] `.claude/skills/recall/SKILL.md`: перед ответом на ретроспективные вопросы — grep по `notes/`, затем по `logs/YYYY/` с явным date scope.
+- [ ] Хелпер конвертации local→UTC для вопросов типа "вчера около 2 часов".
+- [ ] Доки: `docs/skills/recall.md`.
 
 ### 3.3 `/review` skill
 
-- Slash command + skill: walks `notes/_pending.md` one candidate at a time — confirm / drop / edit.
-- Telegram MVP: plain text prompt "yes / no / edit". Inline keyboard later.
-- Threshold-notification (≥5 candidates) is a follow-up substep.
-- Docs: `docs/skills/review.md`.
+- [ ] Slash-команда + skill: проходит `notes/_pending.md` по одному кандидату — confirm / drop / edit.
+- [ ] Telegram MVP: простой текстовый prompt "да / нет / редактировать". Inline keyboard — потом.
+- [ ] Threshold-нотификация (≥5 кандидатов) — следующим подэтапом.
+- [ ] Доки: `docs/skills/review.md`.
 
-## Phase 4 — Maintenance tools (`_tools/`)
+## Этап 4 — обслуживание (`_tools/`)
 
-Live under `$VAULT_ROOT/_tools/` (portable, not in `.claude/`), no LLM-SDK dependencies.
+Живут в `$VAULT_ROOT/_tools/` (портируемо, не в `.claude/`), без LLM-SDK зависимостей.
 
 ### 4.1 `consolidate.py`
 
-- `--dry-run` / `--apply`; finds duplicates by topic / tags, proposes merges.
-- First run is dry-run only. Scheduling via system cron.
+- [ ] `--dry-run` / `--apply`, ищет дубли по topic / tags, предлагает merge.
+- [ ] Первый прогон только dry-run. Планирование через системный cron.
 
 ### 4.2 `search.py`
 
-- Grep wrapper with frontmatter awareness: `--scope notes|logs --since <date>`.
+- [ ] Обёртка над grep с пониманием frontmatter: `--scope notes|logs --since <date>`.
 
 ### 4.3 `archive.py`
 
-- `--older-than <duration>` moves retired projects into `notes/archive/`.
+- [ ] `--older-than <duration>` — переносит retired проекты в `notes/archive/`.
 
-## Deferred
+## Отложено
 
-- Multi-vault support — see [`TODO.md`](../TODO.md).
-- Threshold notification for `/review` (after the base review flow lands).
-- Migration validation on Junie / OpenCode+oh-my-opencode.
+- Multi-vault — см. [`TODO.md`](../TODO.md).
+- Threshold-нотификация для `/review` (после базового review).
+- Проверка миграции на Junie / OpenCode+oh-my-opencode.
 
-## Invariants for every phase
+## Инварианты на каждом этапе
 
-- One commit bundles: code + the matching `docs/<topic>.md` + its parent `docs/*/index.md` update.
-- Everything committed to the repo is in English (CLAUDE.md Ground rules).
-- Skill / command filenames are `snake_case`. Role enum stays `user | assistant | system`. UTC everywhere. Writes are append-only.
+- В одном коммите: код + соответствующий `docs/<тема>.md` + апдейт `docs/*/index.md`.
+- Всё, что коммитится в репо — по-английски (CLAUDE.md). Исключение — этот `roadmap.md` (личный трекер).
+- Имена skills/commands — `snake_case`. Роли в логе — `user | assistant | system`. UTC везде. Append-only.
