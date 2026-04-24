@@ -64,6 +64,12 @@ For non-image attachments the hook cannot fetch the file — that's the agent's 
 
 Every emitted event's `content` passes through `redactor.redact()` (Layer 2 + 3). Raw `hook_input` is never persisted. Attachment markers are inserted **before** redaction so pattern-matching runs over the final text.
 
+## `/nolog` pause (Layer 4)
+
+Before building the event, the script consults `.claude/channels/.nolog`. If the flag is present, `user` / `assistant` events are skipped. A sidecar `.claude/channels/.nolog.state` records the last observed pause state so the hook can emit `system:log_paused` once at the off→on transition and `system:log_resumed` once at on→off. See [`../skills/nolog.md`](../skills/nolog.md) for the full state table.
+
+On `session-start` the hook clears both files after writing `bot_started` — a crash cannot leave a stuck pause across restarts. `session-start` / `session-end` themselves always pass through the pause check.
+
 ## Error handling
 
 Any internal exception is caught and emitted as a `system:hook_error` event with `meta.hook`, `meta.error`, `meta.traceback`. The script always exits 0 — the write-path must never block the runtime. If even the hook_error write fails, a single line is emitted to stderr.

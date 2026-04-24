@@ -34,10 +34,10 @@
 
 ### 2.1 `/nolog` — Layer 4
 
-- [ ] Slash-команда `.claude/commands/nolog.md`, принимает `on | off`.
-- [ ] Флаг в `.claude/channels/.nolog` (чистится при `bot_started`).
-- [ ] `log_event.py`: проверяет флаг на входе; при активной паузе — пропускает `user`/`assistant`; на переходах эмитит `system:log_paused` / `log_resumed`.
-- [ ] Доки: `docs/skills/nolog.md`.
+- [x] Slash-команда `.claude/commands/nolog.md`, принимает `on | off`. Поведение: `on` → `touch .claude/channels/.nolog`, `off` → `rm -f`, без аргумента — репорт состояния.
+- [x] Флаг в `.claude/channels/.nolog` + сайдкар `.nolog.state` (последнее увиденное `log_event.py` состояние — чтобы поймать переход). Оба чистятся при `bot_started`.
+- [x] `log_event.py._apply_nolog`: при off→on эмитит `system:log_paused` и скипает; при on→off эмитит `system:log_resumed` и пишет текущий ивент; стабильные состояния — просто skip/write по флагу. Session-events проходят сквозь паузу.
+- [x] Доки: `docs/skills/nolog.md`, апдейт `docs/scripts/log_event.md`, `docs/skills/index.md`. Self-test: 7 новых кейсов, всего 18/18.
 
 ### 2.2 `/redact` — подключение Layer 3
 

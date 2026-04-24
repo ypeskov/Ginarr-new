@@ -27,6 +27,14 @@ SCRIPT_DIR = Path(__file__).resolve().parent
 sys.path.insert(0, str(SCRIPT_DIR))
 from redactor import redact  # noqa: E402
 
+# Layer 4 — /nolog runtime pause.
+# Flag file exists → write-path is paused. Sidecar records the last state that
+# log_event.py observed, so transitions (off→on, on→off) can be detected and
+# the matching `system:log_paused` / `log_resumed` events emitted once each.
+CHANNELS_DIR = SCRIPT_DIR.parent / "channels"
+NOLOG_FLAG = CHANNELS_DIR / ".nolog"
+NOLOG_STATE = CHANNELS_DIR / ".nolog.state"
+
 
 def now_utc_iso() -> str:
     return (
@@ -49,6 +57,47 @@ def append_event(vault_root: Path, event: dict) -> None:
     # O_APPEND — writes <4 KB are atomic on POSIX (SPEC §"Parallel writers").
     with open(path, "ab") as f:
         f.write(line.encode("utf-8"))
+
+
+def _emit_system(vault_root: Path, content: str) -> None:
+    event = {"ts": now_utc_iso(), "role": "system", "content": content}
+    append_event(vault_root, event)
+
+
+def _apply_nolog(vault_root: Path, event_kind: str) -> bool:
+    """Check the /nolog flag against the last-seen state. Emit log_paused /
+    log_resumed on transitions. Return True when the caller should skip the
+    current user/assistant event (i.e. the pause window is active *after*
+    this tick's transition handling)."""
+    if event_kind not in ("user", "assistant"):
+        return False
+
+    flag_on = NOLOG_FLAG.exists()
+    state_on = NOLOG_STATE.exists()
+
+    if flag_on and not state_on:
+        _emit_system(vault_root, "log_paused")
+        CHANNELS_DIR.mkdir(parents=True, exist_ok=True)
+        NOLOG_STATE.touch()
+        return True
+
+    if not flag_on and state_on:
+        _emit_system(vault_root, "log_resumed")
+        try:
+            NOLOG_STATE.unlink()
+        except FileNotFoundError:
+            pass
+        return False
+
+    return flag_on
+
+
+def _reset_nolog_on_start() -> None:
+    for p in (NOLOG_FLAG, NOLOG_STATE):
+        try:
+            p.unlink()
+        except FileNotFoundError:
+            pass
 
 
 # ---------------------------------------------------------------------------
@@ -349,6 +398,104 @@ def _run_self_test() -> int:
         if len(copied2) != 1:
             fail("idempotent no dup", f"files: {copied2}")
 
+        # ------------------------------------------------------------------
+        # /nolog state-machine tests. Redirect module-level nolog paths into
+        # a temp channels dir so we can drive transitions without touching
+        # the real runtime files.
+        global CHANNELS_DIR, NOLOG_FLAG, NOLOG_STATE  # noqa: PLW0603
+        orig_nolog = (CHANNELS_DIR, NOLOG_FLAG, NOLOG_STATE)
+        try:
+            tmp_channels = Path(tmp) / "channels"
+            tmp_channels.mkdir(parents=True, exist_ok=True)
+            CHANNELS_DIR = tmp_channels
+            NOLOG_FLAG = tmp_channels / ".nolog"
+            NOLOG_STATE = tmp_channels / ".nolog.state"
+
+            vault2 = Path(tmp) / "vault_nolog"
+            (vault2 / "logs").mkdir(parents=True)
+
+            def day_log():
+                now = datetime.now(timezone.utc)
+                p = (
+                    vault2 / "logs" / f"{now.year:04d}" / f"{now.month:02d}"
+                    / f"{now.strftime('%Y-%m-%d')}.jsonl"
+                )
+                if not p.exists():
+                    return []
+                return [
+                    json.loads(line)
+                    for line in p.read_text().splitlines()
+                    if line.strip()
+                ]
+
+            # 11) No flag → don't skip, don't emit
+            total += 1
+            skip = _apply_nolog(vault2, "user")
+            if skip or day_log():
+                fail("nolog off → no skip, no emit",
+                     f"skip={skip} events={day_log()}")
+
+            # 12) Transition off→on: skip, emit log_paused, sidecar appears
+            total += 1
+            NOLOG_FLAG.touch()
+            skip = _apply_nolog(vault2, "user")
+            events = day_log()
+            if (not skip or not NOLOG_STATE.exists() or len(events) != 1
+                    or events[0]["content"] != "log_paused"):
+                fail(
+                    "pause transition",
+                    f"skip={skip} state={NOLOG_STATE.exists()} events={events}",
+                )
+
+            # 13) Steady paused: skip, no new emission
+            total += 1
+            skip = _apply_nolog(vault2, "assistant")
+            events = day_log()
+            if not skip or len(events) != 1:
+                fail("paused steady-state", f"skip={skip} events={events}")
+
+            # 14) Transition on→off: don't skip, emit log_resumed, sidecar gone
+            total += 1
+            NOLOG_FLAG.unlink()
+            skip = _apply_nolog(vault2, "user")
+            events = day_log()
+            if (skip or NOLOG_STATE.exists() or len(events) != 2
+                    or events[1]["content"] != "log_resumed"):
+                fail(
+                    "resume transition",
+                    f"skip={skip} state={NOLOG_STATE.exists()} events={events}",
+                )
+
+            # 15) Steady resumed: don't skip, no new emission
+            total += 1
+            skip = _apply_nolog(vault2, "user")
+            events = day_log()
+            if skip or len(events) != 2:
+                fail("resumed steady-state", f"skip={skip} events={events}")
+
+            # 16) session-start / session-end always pass through nolog
+            total += 1
+            NOLOG_FLAG.touch()
+            s1 = _apply_nolog(vault2, "session-start")
+            s2 = _apply_nolog(vault2, "session-end")
+            if s1 or s2:
+                fail("session events pass through nolog",
+                     f"start={s1} end={s2}")
+            NOLOG_FLAG.unlink()
+
+            # 17) _reset_nolog_on_start clears both flag and state
+            total += 1
+            NOLOG_FLAG.touch()
+            NOLOG_STATE.touch()
+            _reset_nolog_on_start()
+            if NOLOG_FLAG.exists() or NOLOG_STATE.exists():
+                fail(
+                    "reset on start",
+                    f"flag={NOLOG_FLAG.exists()} state={NOLOG_STATE.exists()}",
+                )
+        finally:
+            CHANNELS_DIR, NOLOG_FLAG, NOLOG_STATE = orig_nolog
+
     if fails:
         sys.stderr.write(f"\n{fails}/{total} self-test cases failed\n")
         return 1
@@ -379,8 +526,12 @@ def main() -> int:
     vault_root_path = Path(vault_root)
 
     try:
+        if _apply_nolog(vault_root_path, args.event):
+            return 0
         event = build_event(args.event, hook_input, vault_root_path)
         append_event(vault_root_path, event)
+        if args.event == "session-start":
+            _reset_nolog_on_start()
     except Exception as e:
         err_event = {
             "ts": now_utc_iso(),
