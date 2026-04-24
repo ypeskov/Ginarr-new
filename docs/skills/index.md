@@ -10,10 +10,10 @@ Agent Skills available in this project, all under `.claude/skills/<name>/`. Each
 - **`/redact`** — slash command that appends a value to the Layer 3 owner-marked denylist; `redactor.py` scrubs matches on every log write (SPEC.v3 Layer 3). Template: [`.claude/commands/redact.md`](../../.claude/commands/redact.md); behaviour documented in [`redact.md`](redact.md).
 - **`capture`** — write-side memory skill: triages a user statement into auto-save, unconfirmed save, `_pending.md`, or ask-immediately; writes to `$GINARR_VAULT_ROOT/notes/<type>/<snake_case>.md`. Authoritative doc: [`.claude/skills/capture/SKILL.md`](../../.claude/skills/capture/SKILL.md); operator doc: [`capture.md`](capture.md).
 - **`recall`** — read-side memory skill: on retrospective questions, greps `$GINARR_VAULT_ROOT/notes/` first, then bounded date windows in `logs/`, cites the source in the reply. Never writes. Authoritative doc: [`.claude/skills/recall/SKILL.md`](../../.claude/skills/recall/SKILL.md); operator doc: [`recall.md`](recall.md).
+- **`/review`** — slash command + `review-pending` skill that walks `notes/_pending.md` candidates one-by-one (save / drop / skip / edit). Template: [`.claude/commands/review.md`](../../.claude/commands/review.md); skill: [`.claude/skills/review-pending/SKILL.md`](../../.claude/skills/review-pending/SKILL.md); operator doc: [`review.md`](review.md).
 
 ## Not yet built
 
 Planned per SPEC.v3. Each will get its own entry here when added:
 
-- `review` — walks through `notes/_pending.md` candidates with confirm / drop / edit.
 - `consolidate` — wraps the consolidation CLI tool (dry-run → review → apply).

@@ -1,0 +1,85 @@
+# `/review` — walk the pending queue
+
+The slash command + skill the owner uses to process `notes/_pending.md` candidates. Third of the three SPEC.v3 memory skills (`capture` / `recall` / `review`).
+
+## Source
+
+- Slash command: [`.claude/commands/review.md`](../../.claude/commands/review.md) — user-facing trigger.
+- Skill: [`.claude/skills/review-pending/SKILL.md`](../../.claude/skills/review-pending/SKILL.md) — workflow, dedup rules, Telegram feedback.
+- Data: `$GINARR_VAULT_ROOT/notes/_pending.md` (read + rewrite), `$GINARR_VAULT_ROOT/notes/<type>/` (new files on save).
+
+**Skill naming:** the filesystem directory is `review-pending` (not `review`) to avoid colliding with a built-in `review` skill for PR reviews. The user-facing slash command is still `/review`.
+
+## When it fires
+
+The owner explicitly invokes `/review` to drain the pending queue. The `capture` skill feeds that queue with low-confidence candidates — statements that sounded memorable but not confirmed enough to land as real notes automatically.
+
+## Actions
+
+| Command | Alias (RU) | Effect |
+|---|---|---|
+| `/review` | — | Show the top block + path + action prompt |
+| `/review save` | `сохрани` / `да` | Promote the top block to `notes/<type>/<name>.md` with `status: confirmed`, remove from queue, show next |
+| `/review drop` | `удали` / `нет` | Remove the top block without writing a note, show next |
+| `/review skip` | `пропусти` / `потом` | Rotate the top block to the end of the queue, show next |
+| `/review edit` | `правь` | Enter edit sub-flow (change type / path / body) before saving |
+
+After a candidate is shown, bare action words in the owner's next reply are also accepted — the skill's trigger description picks them up contextually.
+
+## Queue mechanics
+
+`_pending.md` is a plain-Markdown queue:
+
+```
+# Pending review
+…template header…
+
+## <short title>
+- ts: <UTC ISO>
+- source: logs/YYYY/MM/YYYY-MM-DD.jsonl#ts=...
+- proposed type: user | feedback | project | reference | decision
+- proposed path: notes/<subdir>/<snake_case>.md
+
+<body>
+```
+
+- Blocks are delimited by `## ` at column 0.
+- The template header is preserved on every rewrite.
+- The queue is FIFO by default; `skip` rotates to tail.
+
+## Save → note promotion
+
+Promoting a block produces a file in `notes/<type>/<name>.md` with full frontmatter (`type`, `name`, `description`, `created`, `updated`, `status: confirmed`, `source`). Dedup runs first: if the name/topic already has a note, the skill offers to merge. Contradictions trigger the conflict protocol from the `capture` skill (keep both claims dated, `status: unconfirmed`, ask the owner).
+
+## Edit sub-flow
+
+Freeform natural-language edits: type change, path change, body rewrite, or combinations. Preview → confirm → save. Cancel leaves the pending block untouched.
+
+## Telegram feedback
+
+See the skill doc for the full table. Short version: 💾 reaction on save actions, 👌 on drop/skip, no reaction on the candidate prompt itself.
+
+## Relationship to the other memory skills
+
+- `capture` writes the queue.
+- `recall` reads `notes/` and `logs/`, may also peek at `_pending.md` for unconfirmed hints.
+- `review` (this skill) drains the queue at the owner's request.
+
+## Not yet implemented
+
+- **Threshold notification** — when the queue grows past ~5 candidates, ping the owner proactively. Planned as a sub-phase per the roadmap, not in this MVP.
+- **Inline keyboard UI** — Telegram supports button-based prompts; the MVP keeps text-only actions for portability.
+
+## Testing
+
+LLM-driven; no self-test harness. Walk manually:
+
+| Input | Expected |
+|---|---|
+| `/review` on an empty queue | `В очереди ничего нет.` (or English match) |
+| `/review` with one block | Body + proposed path + action prompt |
+| `/review save` | File created at `notes/<type>/<name>.md`, block removed, next candidate shown (or empty-queue line) |
+| `/review drop` | Block removed, no file created |
+| `/review skip` | Block moved to tail of `_pending.md`, next candidate shown |
+| `/review edit` → change type → save | File created at the new type's directory, block removed |
+| `save` with an existing note on the same topic | Dedup triggered: merge or conflict protocol |

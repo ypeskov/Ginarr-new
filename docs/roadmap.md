@@ -68,10 +68,10 @@
 
 ### 3.3 `/review` skill
 
-- [ ] Slash-команда + skill: проходит `notes/_pending.md` по одному кандидату — confirm / drop / edit.
-- [ ] Telegram MVP: простой текстовый prompt "да / нет / редактировать". Inline keyboard — потом.
+- [x] Slash-команда `.claude/commands/review.md` + скилл `.claude/skills/review-pending/SKILL.md` (имя `review-pending` вместо `review` чтобы не конфликтовать со встроенным CC-скилом для PR-ревью; `/review` как slash-команда всё равно работает). Действия: `save | drop | skip | edit` — в RU/EN; skip = ротация в хвост очереди (без потери). Save запускает dedup по `notes/`, при совпадении — merge или conflict protocol из `capture`. Template-заголовок `_pending.md` никогда не перезаписывается.
+- [x] Telegram MVP: реакция 💾 на save (fallback 🧠→👌), 👌 на drop/skip, текстовая подсказка по действиям в презентации кандидата. Inline keyboard — отложено.
 - [ ] Threshold-нотификация (≥5 кандидатов) — следующим подэтапом.
-- [ ] Доки: `docs/skills/review.md`.
+- [x] Доки: `docs/skills/review.md`, апдейт `docs/skills/index.md` (review переехал из Not yet built в Installed).
 
 ## Этап 4 — обслуживание (`_tools/`)
 
