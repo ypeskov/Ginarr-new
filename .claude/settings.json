@@ -4,6 +4,9 @@
     "command": "bash /home/krokobot/Ginarr/.claude/scripts/statusline.sh"
   },
   "hooks": {
+    "PreToolUse": [
+      {"matcher": "Read|Edit|Write|Bash|NotebookEdit", "hooks": [{"type": "command", "command": "python3 /home/krokobot/Ginarr/.claude/scripts/pre_tool_denylist.py"}]}
+    ],
     "UserPromptSubmit": [
       {"hooks": [{"type": "command", "command": "python3 /home/krokobot/Ginarr/.claude/scripts/log_event.py --event user"}]}
     ],

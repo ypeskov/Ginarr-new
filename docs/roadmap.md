@@ -19,10 +19,10 @@
 
 ### 1.1 Layer 1 — PreToolUse denylist
 
-- [ ] Новый хук `pre_tool_denylist.py`, регистрация в `settings.json` на `PreToolUse` (matcher: `Read|Bash|Edit|Write`).
-- [ ] Denylist из SPEC §"Secrets and PII": `.env*`, `*.pem`, `*.key`, `id_rsa*`, `credentials*`, `~/.ssh/**`, `~/.aws/**`, `~/.config/gcloud/**`, `~/.kube/config`.
-- [ ] При матче: deny с `[REDACTED: path in denylist]` в `permissionDecisionReason`.
-- [ ] Доки: обновить `docs/hooks.md`, создать `docs/scripts/pre_tool_denylist.md`.
+- [x] Новый хук `pre_tool_denylist.py`, регистрация в `settings.json` на `PreToolUse` (matcher: `Read|Edit|Write|Bash|NotebookEdit`).
+- [x] Denylist из SPEC §"Secrets and PII": `.env*` (кроме `.env.example`), `*.pem`, `*.key`, `id_rsa*`, `credentials*`, `~/.ssh/**`, `~/.aws/**`, `~/.config/gcloud/**`, `~/.kube/config`.
+- [x] При матче: deny с `[REDACTED: path in denylist]` в `permissionDecisionReason`. Bash-команды сканируются token-by-token (best-effort).
+- [x] Доки: обновить `docs/hooks.md`, создать `docs/scripts/pre_tool_denylist.md`.
 
 ### 1.2 Attachment markers
 

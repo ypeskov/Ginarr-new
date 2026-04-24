@@ -37,7 +37,6 @@ See [hooks.md](hooks.md) for the extraction details and [scripts/log_event.md](s
 
 ## What is NOT here yet
 
-- **Layer 1** — `PreToolUse` hook enforcing a path denylist (`.env*`, `*.pem`, `~/.ssh/**`, …). Not wired.
 - **Consolidation / search / archive tools** — only `redactor.py` has been built from SPEC.v3 §"Portable tools".
 - **Skills** — only `create-skill` is installed (copied from OpenClaw for scaffolding). The six project-specific skills (`capture`, `recall`, `review`, `consolidate`, `redact`, `nolog`) are not yet built.
 - **Attachment markers** (`[image: …]`, `[file: …]`, `[audio: …]`) — the write-path currently logs prompt text as-is; Telegram-specific attachment handling comes later.

@@ -1,8 +1,13 @@
 # Claude Code hooks
 
-Wired in `.claude/settings.json`. All four hooks invoke `log_event.py` with a matching `--event` flag. The script reads hook JSON from stdin.
+Wired in `.claude/settings.json`. Two script entry points:
 
-## Wiring
+- `log_event.py` — the write-path, one invocation per conversational-lifecycle event.
+- `pre_tool_denylist.py` — Layer 1 access control on tool calls; see [scripts/pre_tool_denylist.md](scripts/pre_tool_denylist.md).
+
+Both read hook JSON from stdin.
+
+## Write-path wiring
 
 | Hook event         | `--event`       | Writes                                                       |
 |--------------------|-----------------|--------------------------------------------------------------|
@@ -12,6 +17,12 @@ Wired in `.claude/settings.json`. All four hooks invoke `log_event.py` with a ma
 | `SessionEnd`       | `session-end`   | `{role:"system", content:"bot_stopped"}` (`meta.session_id`) |
 
 All writes go to `$GINARR_VAULT_ROOT/logs/YYYY/MM/YYYY-MM-DD.jsonl` (UTC, sub-second precision). Content is passed through `redactor.py` before the event is serialized.
+
+## Access-control wiring
+
+| Hook event    | Script                     | Matcher                             | Effect                                                                 |
+|---------------|----------------------------|-------------------------------------|------------------------------------------------------------------------|
+| `PreToolUse`  | `pre_tool_denylist.py`     | `Read|Edit|Write|Bash|NotebookEdit` | Denies calls targeting SPEC denylist paths; returns a `[REDACTED: …]` stub. |
 
 ## Assistant text extraction
 
