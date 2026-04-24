@@ -62,9 +62,9 @@
 
 ### 3.2 `recall` skill
 
-- [ ] `.claude/skills/recall/SKILL.md`: перед ответом на ретроспективные вопросы — grep по `notes/`, затем по `logs/YYYY/` с явным date scope.
-- [ ] Хелпер конвертации local→UTC для вопросов типа "вчера около 2 часов".
-- [ ] Доки: `docs/skills/recall.md`.
+- [x] `.claude/skills/recall/SKILL.md`: read-only скилл. На ретроспективные вопросы — grep по `notes/` (авторитет, логи не трогаем, если заметка отвечает), иначе `logs/YYYY/MM/*.jsonl` с явным UTC-окном, плюс опционально `_pending.md` c пометкой «не подтверждено». Цитата источника в каждом ответе; если ничего нет — говорит одной строкой, не выдумывает.
+- [x] Local→UTC — **LLM-native**: скилл инструктирует Claude конвертировать фразы типа «вчера около 2» в UTC-окно по TZ владельца (Europe/Sofia, DST-aware), с кросс-чеком `TZ=Europe/Sofia date -u …` на границах. Helper-скрипт не пишется — SPEC прямо говорит, что локальное время это query-time concern. TZ владельца сохранена в private auto-memory (`user_default_timezone.md`).
+- [x] Доки: `docs/skills/recall.md`, апдейт `docs/skills/index.md` (recall переехал из Not yet built в Installed).
 
 ### 3.3 `/review` skill
 
