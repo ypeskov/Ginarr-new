@@ -95,4 +95,4 @@
 
 - В одном коммите: код + соответствующий `docs/<тема>.md` + апдейт `docs/*/index.md`.
 - Всё, что коммитится в репо — по-английски (CLAUDE.md). Исключение — этот `roadmap.md` (личный трекер).
-- Имена skills/commands — `snake_case`. Роли в логе — `user | assistant | system`. UTC везде. Append-only.
+- Имена skills — kebab-case (agentskills.io spec). Имена заметок в vault'е — `snake_case.md` (SPEC.v3). Роли в логе — `user | assistant | system`. UTC везде. Append-only.
