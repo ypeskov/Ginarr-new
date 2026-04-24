@@ -26,20 +26,6 @@ Behavior (scripts, hooks, skills) lives in **this repo** under `.claude/`. Data 
 
 Current wiring is documented in [`docs/architecture.md`](docs/architecture.md). SPEC.v3's original layout put `skills/`, `agents/`, and `_tools/` inside the vault — that is superseded, pending formalisation in SPEC v4.
 
-## Core design principles
-
-Read `SPEC.v3.md` for the full spec. These are the load-bearing invariants — do not violate them without an explicit revision:
-
-- **Event log is a natural chat transcript.** Roles are only `user | assistant | system`. No `tool_call` / `tool_result` events. `content` is always a string. Attachments are referenced inline as `[image: path]` / `[file: path]` / `[audio: path]`. Tool internals are not part of the history.
-- **UTC everywhere.** Log `ts`, filenames, frontmatter dates, resolved relative dates. Local-time interpretation is a query-time concern, not a storage concern. No `OWNER_TZ` config.
-- **Append-only is a writer-side discipline**, not cryptographic immutability. Manual scrubbing of secrets is the documented escape hatch.
-- **Ordering** = file position. `ts` is displayed time. On ties, file order wins.
-- **No session_id / no turn.** Always-on single-owner bot has no meaningful session lifecycle. Don't reintroduce these fields.
-- **One topic = one file** in `notes/`. Filenames are **snake_case** (mandatory, not optional). Primary dedup mechanism.
-- **Conflict detection is agent judgment**, not an algorithm. The spec prescribes the resolution protocol, not a detector.
-- **OWNER_ID enforcement** is adapter-level only. Skills trust they run in an owner-authenticated process.
-- **Layer 1 (path denylist)** is runtime-level access control via pre-tool hook. On hook-less runtimes it degrades to convention.
-
 ## Naming and language conventions
 
 - Note filenames: `snake_case.md`.
