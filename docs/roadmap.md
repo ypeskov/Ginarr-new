@@ -41,10 +41,12 @@
 
 ### 2.2 `/redact` — подключение Layer 3
 
-- [ ] Slash-команда `.claude/commands/redact.md`: `/redact <value>` апендит `value` в `.claude/channels/.redact-list`.
-- [ ] `log_event.py`: передаёт путь этого файла в `redactor.py` при вызове `redact()`.
-- [ ] Файл чистится при `bot_started` (внутри `log_event.py --event session-start`).
-- [ ] Доки: `docs/skills/redact.md`.
+- [x] Slash-команда `.claude/commands/redact.md`: `/redact <value>` — Claude читает текущий `.redact-list` через Read, добавляет значение, пишет обратно через Write (без шелла → никаких проблем со спецсимволами). Без аргумента — репорт количества без раскрытия значений. Дубликаты отсеиваются, multi-line значения отклоняются.
+- [x] `log_event.py`: `_load_redact_list()` читает `.claude/channels/.redact-list` на каждый user/assistant ивент и прокидывает в `redactor.redact(text, denylist)`. Missing file → пустой список (soft-fail, write-path не должен блокировать).
+- [x] Файл чистится на `SessionStart` через `_reset_channels_on_start()` (рядом с `.nolog` / `.nolog.state`) — сразу после записи `bot_started`. Layer 3 по SPEC — process-lifetime only.
+- [x] Доки: `docs/skills/redact.md`, апдейт `docs/skills/index.md`, `docs/scripts/log_event.md`, `docs/scripts/redactor.md`. Self-test: 5 новых кейсов, всего 23/23.
+
+**Следующим шагом (не в 2.2):** inline-тег `<secret>value</secret>` как альтернатива «одноразовой утечки в самом `/redact <value>`-промпте». SPEC.v3 разрешает этот синтаксис; `redactor.py` его пока не реализует.
 
 ## Этап 3 — память (skill'ы capture / recall / review)
 

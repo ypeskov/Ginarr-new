@@ -27,7 +27,7 @@ redactor.py --self-test    # 16 cases, pass/fail summary to stderr
 
 ## Invocation inside the bot
 
-Used as a library by `log_event.py` (`from redactor import redact`). Applied to every `user` and `assistant` event's content before the event is serialised.
+Used as a library by `log_event.py` (`from redactor import redact`). Applied to every `user` and `assistant` event's content before the event is serialised. The Layer 3 denylist is read on each call from `.claude/channels/.redact-list` via `log_event._load_redact_list()` — values are appended there by the [`/redact`](../skills/redact.md) slash command and wiped by `_reset_channels_on_start()` on `SessionStart`.
 
 ## Contract
 

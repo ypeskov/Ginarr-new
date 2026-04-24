@@ -62,13 +62,15 @@ For non-image attachments the hook cannot fetch the file — that's the agent's 
 
 ## Redaction
 
-Every emitted event's `content` passes through `redactor.redact()` (Layer 2 + 3). Raw `hook_input` is never persisted. Attachment markers are inserted **before** redaction so pattern-matching runs over the final text.
+Every emitted event's `content` passes through `redactor.redact(text, denylist)` (Layer 2 + 3). Raw `hook_input` is never persisted. Attachment markers are inserted **before** redaction so pattern-matching runs over the final text.
+
+The Layer 3 `denylist` argument is loaded per-call by `_load_redact_list()` from `.claude/channels/.redact-list`. Missing or unreadable file → empty list (soft-fail; the write-path must never block). Values are appended by the [`/redact`](../skills/redact.md) slash command. On `SessionStart` the file is deleted after `bot_started` is written — Layer 3 is process-lifetime only, per SPEC.
 
 ## `/nolog` pause (Layer 4)
 
 Before building the event, the script consults `.claude/channels/.nolog`. If the flag is present, `user` / `assistant` events are skipped. A sidecar `.claude/channels/.nolog.state` records the last observed pause state so the hook can emit `system:log_paused` once at the off→on transition and `system:log_resumed` once at on→off. See [`../skills/nolog.md`](../skills/nolog.md) for the full state table.
 
-On `session-start` the hook clears both files after writing `bot_started` — a crash cannot leave a stuck pause across restarts. `session-start` / `session-end` themselves always pass through the pause check.
+On `session-start`, `_reset_channels_on_start()` deletes the nolog flag, its sidecar, **and** the Layer 3 redact list — a crash cannot leave a stuck pause or stale owner-marked values across restarts. `session-start` / `session-end` themselves always pass through the pause check.
 
 ## Error handling
 

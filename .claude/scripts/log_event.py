@@ -31,9 +31,14 @@ from redactor import redact  # noqa: E402
 # Flag file exists → write-path is paused. Sidecar records the last state that
 # log_event.py observed, so transitions (off→on, on→off) can be detected and
 # the matching `system:log_paused` / `log_resumed` events emitted once each.
+#
+# Layer 3 — /redact owner-marked denylist.
+# One value per line. `redact()` replaces occurrences with [REDACTED:user-marked]
+# on every user/assistant write. Process-lifetime only — cleared on bot_started.
 CHANNELS_DIR = SCRIPT_DIR.parent / "channels"
 NOLOG_FLAG = CHANNELS_DIR / ".nolog"
 NOLOG_STATE = CHANNELS_DIR / ".nolog.state"
+REDACT_LIST = CHANNELS_DIR / ".redact-list"
 
 
 def now_utc_iso() -> str:
@@ -92,12 +97,25 @@ def _apply_nolog(vault_root: Path, event_kind: str) -> bool:
     return flag_on
 
 
-def _reset_nolog_on_start() -> None:
-    for p in (NOLOG_FLAG, NOLOG_STATE):
+def _reset_channels_on_start() -> None:
+    """Wipe runtime-only channel state so a restart starts clean:
+    no stuck pause, no leftover owner-marked redactions."""
+    for p in (NOLOG_FLAG, NOLOG_STATE, REDACT_LIST):
         try:
             p.unlink()
         except FileNotFoundError:
             pass
+
+
+def _load_redact_list() -> list[str]:
+    """Return the Layer 3 owner-marked denylist values, one per non-blank
+    line. Missing or unreadable file → empty list (soft-fail; the write-path
+    must never block)."""
+    try:
+        with open(REDACT_LIST, encoding="utf-8") as f:
+            return [line.rstrip("\n") for line in f if line.strip()]
+    except (FileNotFoundError, OSError):
+        return []
 
 
 # ---------------------------------------------------------------------------
@@ -247,7 +265,7 @@ def build_event(event_kind: str, hook_input: dict, vault_root: Path) -> dict:
         if not isinstance(prompt, str):
             prompt = "" if prompt is None else str(prompt)
         prompt = parse_channel_tags(prompt, vault_root, dt)
-        return {"ts": ts, "role": "user", "content": redact(prompt)}
+        return {"ts": ts, "role": "user", "content": redact(prompt, _load_redact_list())}
 
     if event_kind == "assistant":
         # CC provides the final text block in `last_assistant_message`. Any
@@ -267,7 +285,7 @@ def build_event(event_kind: str, hook_input: dict, vault_root: Path) -> dict:
             text = flushed_text + "\n\n" + final_text
         else:
             text = flushed_text or final_text
-        return {"ts": ts, "role": "assistant", "content": redact(text)}
+        return {"ts": ts, "role": "assistant", "content": redact(text, _load_redact_list())}
 
     if event_kind == "session-start":
         sid = hook_input.get("session_id") or ""
@@ -483,11 +501,11 @@ def _run_self_test() -> int:
                      f"start={s1} end={s2}")
             NOLOG_FLAG.unlink()
 
-            # 17) _reset_nolog_on_start clears both flag and state
+            # 17) _reset_channels_on_start clears nolog flag and state
             total += 1
             NOLOG_FLAG.touch()
             NOLOG_STATE.touch()
-            _reset_nolog_on_start()
+            _reset_channels_on_start()
             if NOLOG_FLAG.exists() or NOLOG_STATE.exists():
                 fail(
                     "reset on start",
@@ -495,6 +513,55 @@ def _run_self_test() -> int:
                 )
         finally:
             CHANNELS_DIR, NOLOG_FLAG, NOLOG_STATE = orig_nolog
+
+        # ------------------------------------------------------------------
+        # /redact Layer 3 denylist. Redirect the list file into a temp dir
+        # and exercise the loader + session-start reset.
+        global REDACT_LIST  # noqa: PLW0603
+        orig_redact = REDACT_LIST
+        try:
+            tmp_ch = Path(tmp) / "channels_redact"
+            tmp_ch.mkdir(parents=True, exist_ok=True)
+            REDACT_LIST = tmp_ch / ".redact-list"
+
+            # 18) Missing file → empty list
+            total += 1
+            if _load_redact_list():
+                fail("redact list missing → empty",
+                     f"got {_load_redact_list()}")
+
+            # 19) Single value
+            total += 1
+            REDACT_LIST.write_text("falcon\n", encoding="utf-8")
+            if _load_redact_list() != ["falcon"]:
+                fail("redact list single", f"got {_load_redact_list()}")
+
+            # 20) Skips blank / whitespace-only lines
+            total += 1
+            REDACT_LIST.write_text(
+                "alpha\n\n  \nbeta\ngamma\n", encoding="utf-8"
+            )
+            if _load_redact_list() != ["alpha", "beta", "gamma"]:
+                fail("redact list skip blanks",
+                     f"got {_load_redact_list()}")
+
+            # 21) End-to-end: build_event uses the list to scrub content
+            total += 1
+            vault3 = Path(tmp) / "vault_redact"
+            (vault3 / "logs").mkdir(parents=True)
+            REDACT_LIST.write_text("Galina\n", encoding="utf-8")
+            ev = build_event("user", {"prompt": "hi Galina"}, vault3)
+            if ev["content"] != "hi [REDACTED:user-marked]":
+                fail("build_event applies redact list",
+                     f"got {ev['content']!r}")
+
+            # 22) _reset_channels_on_start wipes the redact list too
+            total += 1
+            _reset_channels_on_start()
+            if REDACT_LIST.exists():
+                fail("reset clears redact list", "file still exists")
+        finally:
+            REDACT_LIST = orig_redact
 
     if fails:
         sys.stderr.write(f"\n{fails}/{total} self-test cases failed\n")
@@ -531,7 +598,7 @@ def main() -> int:
         event = build_event(args.event, hook_input, vault_root_path)
         append_event(vault_root_path, event)
         if args.event == "session-start":
-            _reset_nolog_on_start()
+            _reset_channels_on_start()
     except Exception as e:
         err_event = {
             "ts": now_utc_iso(),
