@@ -22,6 +22,34 @@ Managed by the Telegram channel plugin, **not** by this repo. Holds `TELEGRAM_BO
 
 `ginarr-watchdog.sh` reads the token from this file directly to call `getMe` as a liveness probe.
 
+## Obsidian Sync (current deployment)
+
+The vault at `$GINARR_VAULT_ROOT` is kept in sync with Obsidian's hosted service via the official `ob` CLI (`/home/linuxbrew/.linuxbrew/bin/ob`, v0.0.8). The daemon is **not owned by this repo** — it lives in a sibling project:
+
+- Script: `~/OpenClaw/.claude/scripts/obsidian-sync.sh` (a 30-second `while true` loop running `ob sync`).
+- Log: `~/OpenClaw/.claude/scripts/logs/obsidian-sync-last.log` — current tick's output, overwritten each cycle.
+
+On a fresh deployment without OpenClaw there is no sync at all; the vault stays local until something is wired up.
+
+### "Logs/notes don't appear in Obsidian" — three knobs
+
+All three must align. Missing any one makes `logs/**/*.jsonl` invisible on the Mac/iOS client:
+
+1. **Server-side file-types** must include `unsupported`. JSONL doesn't match `image|audio|video|pdf`, so the default config won't upload it. Fix and verify on the Linux host:
+   ```
+   ob sync-config --path ~/obsidian-vaul \
+       --file-types image,audio,video,pdf,unsupported
+   ob sync-status --path ~/obsidian-vaul
+   ```
+2. **Client-side Sync selection.** On the Mac: `Settings → Core plugins → Sync → Selected file types → Unsupported` ON. Sync's file-type filter is per-device.
+3. **File-explorer visibility.** On the Mac: `Settings → Files and links → Detect all file extensions` ON. Obsidian otherwise hides non-native extensions in the sidebar even when they exist on disk.
+
+### Useful `ob` subcommands
+
+- `ob sync-status --path <vault>` — current config + sync mode.
+- `ob sync-list-local` / `ob sync-list-remote` — enumerate vaults.
+- `ob sync-config --help` — full option list (conflict strategy, excluded folders, config categories, device name, sync mode).
+
 ## Bootstrap on a new machine
 
 1. Clone this repo.
