@@ -18,6 +18,8 @@ Both read hook JSON from stdin.
 
 All writes go to `$GINARR_VAULT_ROOT/logs/YYYY/MM/YYYY-MM-DD.jsonl` (UTC, sub-second precision). Content is passed through `redactor.py` before the event is serialized.
 
+On `user` events the hook also rewrites Telegram `<channel …>…</channel>` wrappers into plain text plus SPEC attachment markers (`[image: …]` / `[audio: …]` / `[file: …]`). Images are copied into `logs/YYYY/MM/attachments/`. See [scripts/log_event.md](scripts/log_event.md) §"Attachments".
+
 ## Access-control wiring
 
 | Hook event    | Script                     | Matcher                             | Effect                                                                 |

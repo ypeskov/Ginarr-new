@@ -38,5 +38,6 @@ See [hooks.md](hooks.md) for the extraction details and [scripts/log_event.md](s
 ## What is NOT here yet
 
 - **Consolidation / search / archive tools** — only `redactor.py` has been built from SPEC.v3 §"Portable tools".
+- **Attachment materialisation for non-image Telegram content** — `voice`, `audio`, `document` and similar kinds produce `[kind: unresolved:<file_id>]` markers because the agent, not the hook, downloads them. A backfill mechanism is not yet wired.
 - **Skills** — only `create-skill` is installed (copied from OpenClaw for scaffolding). The six project-specific skills (`capture`, `recall`, `review`, `consolidate`, `redact`, `nolog`) are not yet built.
 - **Attachment markers** (`[image: …]`, `[file: …]`, `[audio: …]`) — the write-path currently logs prompt text as-is; Telegram-specific attachment handling comes later.

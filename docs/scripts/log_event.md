@@ -12,6 +12,8 @@ python3 .../log_event.py --event {user|assistant|session-start|session-end}
 
 Reads hook JSON from stdin. Writes to `$GINARR_VAULT_ROOT/logs/YYYY/MM/YYYY-MM-DD.jsonl` (UTC, sub-second precision). If `GINARR_VAULT_ROOT` is unset the script prints a message to stderr and exits 0 — the bot runs, but no events are captured.
 
+A `--self-test` mode (no stdin, no env var required) runs the in-file test battery — channel-tag parsing, attachment copy, pass-through, unresolved markers.
+
 ## Event bodies
 
 | `--event`       | Role         | Content source                                                   |
@@ -32,9 +34,35 @@ At `Stop`-hook time the Claude Code transcript file may not yet contain the fina
 
 Concatenation is `flushed + "\n\n" + final`, or just one of them if the other is empty. If `final` is already a suffix of `flushed`, only `flushed` is kept (dedup).
 
+## Attachments (user events)
+
+Telegram delivers inbound messages wrapped in an XML tag in `hook_input.prompt`:
+
+```
+<channel source="telegram" chat_id="…" user="…" ts="…"
+         image_path="/tmp/…" attachment_file_id="…" attachment_kind="voice" …>
+inner text
+</channel>
+```
+
+Before redaction, the user-event branch rewrites each tag to plain text plus SPEC `[image: …]` / `[file: …]` / `[audio: …]` markers.
+
+| Source attribute                               | Handling                                                                                                              |
+|------------------------------------------------|-----------------------------------------------------------------------------------------------------------------------|
+| `image_path="<local>"`                         | File copied to `logs/YYYY/MM/attachments/YYYY-MM-DD_<sha8>.<ext>`; marker `[image: attachments/…]`. Missing/unreadable source is silently skipped. |
+| `attachment_file_id="<id>" attachment_kind=…`  | File not yet materialised at hook time (agent downloads on demand). Marker `[audio: unresolved:<id>]` for `voice`/`audio`, `[file: unresolved:<id>]` otherwise. |
+| Inner text                                     | Preserved as-is; markers appended after it separated by a single space. |
+| No `<channel>` tag                             | Prompt passes through unchanged (terminal-originated prompts, non-Telegram channels). |
+
+Names of copied files are content-addressed (`sha256[:8]` of the payload), so a repeated upload of the same image is deduped to one file on disk. SPEC §"Attachments" states paths are relative to `logs/YYYY/MM/`.
+
+### Unresolved attachments
+
+For non-image attachments the hook cannot fetch the file — that's the agent's job via `download_attachment`. The `unresolved:<file_id>` marker is a Ginarr extension beyond SPEC's strict `[kind: path]` format. A future phase may backfill the real path once the download completes.
+
 ## Redaction
 
-Every emitted event's `content` passes through `redactor.redact()` (Layer 2 + 3). Raw `hook_input` is never persisted.
+Every emitted event's `content` passes through `redactor.redact()` (Layer 2 + 3). Raw `hook_input` is never persisted. Attachment markers are inserted **before** redaction so pattern-matching runs over the final text.
 
 ## Error handling
 

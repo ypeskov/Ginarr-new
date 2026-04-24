@@ -26,9 +26,9 @@
 
 ### 1.2 Attachment markers
 
-- [ ] В `log_event.py` для `user`-ивентов: парсить `<channel>` теги, доставать `image_path` / `attachment_file_id`, копировать файл в `$VAULT_ROOT/logs/YYYY/MM/attachments/YYYY-MM-DD_<sha8>.<ext>`.
-- [ ] Подменять `<channel>` в `content` на `[image: attachments/…]` / `[file: …]` / `[audio: …]`.
-- [ ] Доки: обновить `docs/hooks.md` и `docs/scripts/log_event.md`.
+- [x] В `log_event.py` для `user`-ивентов: парсить `<channel>` теги, доставать `image_path` / `attachment_file_id`, копировать файл в `$VAULT_ROOT/logs/YYYY/MM/attachments/YYYY-MM-DD_<sha8>.<ext>` (content-addressed → dedup).
+- [x] Подменять `<channel>` в `content` на `[image: attachments/…]` / `[file: …]` / `[audio: …]`. Для `attachment_file_id` без локального файла — Ginarr-расширение `[kind: unresolved:<file_id>]` (агент потом скачивает через `download_attachment`); настоящий backfill пути — отдельный этап.
+- [x] Доки: обновить `docs/hooks.md` и `docs/scripts/log_event.md`. Self-test в `log_event.py --self-test` (11 кейсов).
 
 ## Этап 2 — runtime-контроль записи
 
