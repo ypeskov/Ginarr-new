@@ -14,14 +14,16 @@ metadata:
 
 # recall
 
-Read-side memory skill. Complements `capture` (write-side). When the owner asks a retrospective question, search `$GINARR_VAULT_ROOT/notes/` first; if needed, fall back to `$GINARR_VAULT_ROOT/logs/YYYY/MM/*.jsonl` within a bounded date window. Answer **from what you found**, citing the source. If nothing was found, say so — do not invent.
+Read-side memory skill. Complements `capture` (write-side). When the owner asks a retrospective question, search `$GINARR_VAULT_ROOT/notes/` first; if that doesn't resolve it, grep the per-day summaries in `$GINARR_VAULT_ROOT/logs/summaries/`; only then drill into the raw JSONL in `$GINARR_VAULT_ROOT/logs/YYYY/MM/*.jsonl`, and only on the days the summaries point to. Answer **from what you found**, citing the source. If nothing was found, say so — do not invent.
 
 ## Scope order (authoritative)
 
 1. **`notes/` first.** These are curated facts — one topic per file, owner-visible. If a note covers the question, quote or summarise it and stop. Do not "double-check" in the logs: notes are the authority, logs are the raw material they were derived from.
-2. **`logs/` second, only if notes don't cover it.** Always bound the grep by a date window — unbounded grep across years of JSONL is wasteful and picks up noise.
-3. **`_pending.md` on demand.** If the question implies something the owner was recently thinking about but may not have confirmed, also consult `$GINARR_VAULT_ROOT/notes/_pending.md`. Flag that the match is unconfirmed in the reply.
-4. **Nothing found.** Say it plainly — do not fabricate. Optionally suggest that `capture` will pick it up next time if the owner wants to start tracking the topic.
+2. **`logs/summaries/` second.** Per-day Markdown summaries built by the `summarize-day` skill. Each one is a sub-1KB index for one UTC date with topics, people, decisions. `grep -ril "<keyword>" "$GINARR_VAULT_ROOT/logs/summaries/"` is fast even across years and tells you which day(s) to drill into. If a summary's bullet already answers the question, quote that bullet and cite the summary file — no need to open the JSONL.
+3. **`logs/` JSONL third, only on the days the summaries flagged.** When a summary points to a day but doesn't quote enough detail, open just that one `logs/YYYY/MM/<date>.jsonl` and grep within it. Do not blanket-grep all logs. If summaries returned nothing for the keyword and notes don't cover it, expand the JSONL grep to a bounded date window (see below) — but treat that as a fallback, not the default.
+4. **`_pending.md` on demand.** If the question implies something the owner was recently thinking about but may not have confirmed, also consult `$GINARR_VAULT_ROOT/notes/_pending.md`. Flag that the match is unconfirmed in the reply.
+5. **Today (UTC)** has no summary yet — `summarize-day` only processes complete days. If the question is clearly about today, skip step 2 and grep today's JSONL directly.
+6. **Nothing found.** Say it plainly — do not fabricate. Optionally suggest that `capture` will pick it up next time if the owner wants to start tracking the topic.
 
 ## Date windows and local time
 
@@ -48,9 +50,12 @@ If no period is given and notes don't resolve the question, either:
 1. **Parse the question.** Extract (a) topic / keyword(s), (b) date scope if any.
 2. **Grep notes.** `grep -rli "<keyword>" "$GINARR_VAULT_ROOT/notes/"`. Run variants in parallel: morphological roots (Russian `собак` catches `собаки`/`собаку`), singular/plural, EN↔RU aliases.
 3. **Match in notes?** → `Read` each hit. If the answer is there, reply and cite the note path (`— из notes/user/dog_rex.md`). Stop.
-4. **No match, or note too thin?** → Build the UTC date window (above). Grep the matching log files: `grep -h "<keyword>" "$GINARR_VAULT_ROOT/logs/YYYY/MM/YYYY-MM-DD.jsonl"`. Each line is a JSONL event — parse `ts`, `role`, `content`. Quote the relevant span with its UTC timestamp. For multi-day windows, loop over the daily files inside the range.
-5. **Cite sources.** Every factual claim in the reply names its origin — note path or log timestamp. No unsourced assertions.
-6. **Nothing found.** State it plainly. Do not guess.
+4. **No match, or note too thin?** → Grep summaries: `grep -ril "<keyword>" "$GINARR_VAULT_ROOT/logs/summaries/"` (parallel for variants). Each hit is a `YYYY-MM-DD.md` for one UTC day. If the bullet inside answers the question on its own, quote it and cite `logs/summaries/YYYY/MM/<date>.md`. Stop.
+5. **Summary points to a day but lacks detail?** → Open just that one `logs/YYYY/MM/<date>.jsonl` and grep inside it: `grep -h "<keyword>" "$GINARR_VAULT_ROOT/logs/YYYY/MM/<date>.jsonl"`. Each line is a JSONL event — parse `ts`, `role`, `content`. Quote the relevant span with its UTC timestamp.
+6. **Summaries returned nothing AND notes are thin?** → Fall back to a bounded JSONL grep over the date window (see below). Use this only when summaries genuinely missed; do not pre-empt step 4 with it.
+7. **Today (UTC).** No summary exists. If the question is about today, skip the summary step and grep today's JSONL directly.
+8. **Cite sources.** Every factual claim in the reply names its origin — note path, summary path, or log timestamp. No unsourced assertions.
+9. **Nothing found.** State it plainly. Do not guess.
 
 ## Keyword search discipline
 

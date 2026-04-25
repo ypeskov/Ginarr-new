@@ -19,7 +19,7 @@ The bot repo and the memory vault are **separate** directories with independent 
 
 `GINARR_VAULT_ROOT` in `.claude/.env` (gitignored) points the bot at its vault. `ginarr-bot.sh` sources this file before exec'ing Claude, so the variable is inherited by all hook processes.
 
-Rationale for the split: data is format-portable, behavior is runtime-specific; keeping them apart avoids accidentally coupling a multi-year memory store to a single agent runtime. See SPEC.v3 §"Vendor neutrality".
+Rationale for the split: data is format-portable, behavior is runtime-specific; keeping them apart avoids accidentally coupling a multi-year memory store to a single agent runtime. The vendor-neutrality argument was first laid out in `SPEC.v3.md` §"Vendor neutrality" (kept as a historical artefact, not edited going forward).
 
 ## Write-path
 
@@ -34,6 +34,15 @@ Every conversational turn flows through Claude Code hooks into the vault as one 
 All content is passed through `redactor.py` (Layer 2 regex + Layer 3 owner denylist) before persistence.
 
 See [hooks.md](hooks.md) for the extraction details and [scripts/log_event.md](scripts/log_event.md) for the implementation.
+
+## Read-path index
+
+The raw JSONL is authoritative but expensive to grep. A daily roll-up sits next to it as a homemade index.
+
+- **`logs/summaries/YYYY/MM/<date>.md`** — built by the [`summarize-day`](skills/summarize-day.md) skill at 00:15 UTC each night. One file per UTC date, ~1KB, dry bullet list of topics, people, decisions, paths.
+- The `summaries/` subtree is parallel to the per-month log folders, never nested inside them, so a `grep -r` over only `summaries/` ignores the heavy raw logs.
+- The `recall` skill greps in this order: `notes/` → `logs/summaries/` → a single day's `logs/<date>.jsonl`. Summaries narrow the search; the JSONL only opens for the day(s) a summary points to.
+- Today's UTC date never has a summary (the day is still being written). `recall` falls through to today's JSONL directly when the question is about today.
 
 ## What is NOT here yet
 

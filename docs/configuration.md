@@ -56,4 +56,17 @@ All three must align. Missing any one makes `logs/**/*.jsonl` invisible on the M
 2. `cp .claude/.env.example .claude/.env` and set `GINARR_VAULT_ROOT` to your vault path.
 3. Make sure the vault exists and contains `logs/` and `notes/` (see [architecture.md](architecture.md)).
 4. Run `/telegram:configure` in a terminal Claude session to pair the bot token.
-5. Install the watchdog cron line (see [scripts/ginarr-watchdog.md](scripts/ginarr-watchdog.md)).
+5. Install the cron lines (see the per-script docs for the exact one-liner):
+   - Watchdog — every minute, keeps the bot alive: [scripts/ginarr-watchdog.md](scripts/ginarr-watchdog.md).
+   - Daily summaries — 00:15 UTC, builds the read-path index: [scripts/summarize-day.md](scripts/summarize-day.md).
+
+## Cron lines installed by this repo
+
+All cron entries live in the **owner's user crontab** (`crontab -e`), not in `/etc/cron.d/`. Inspect with `crontab -l`:
+
+| When            | Script                                                                       | Purpose                                                       |
+|-----------------|------------------------------------------------------------------------------|---------------------------------------------------------------|
+| `* * * * *`     | `~/Ginarr/.claude/scripts/ginarr-watchdog.sh`                                | Keep the `ginarr` tmux session and the Telegram plugin alive. |
+| `15 0 * * *`    | `~/Ginarr/.claude/scripts/summarize-day.sh`                                  | Daily roll-up of `logs/<date>.jsonl` into `logs/summaries/`.  |
+
+OpenClaw and any other sibling repos may add their own entries (e.g. weather, news, calendar digests); those are not owned by this repo.

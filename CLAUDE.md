@@ -6,7 +6,7 @@
 - **Docs stay in sync.** Operator documentation lives under [`docs/`](docs/index.md). Every directory there carries an `index.md`. When you add, modify, or remove a script, hook, or skill, update the matching doc **and** the parent `index.md` in the **same commit** that touches the code. Out-of-date docs are worse than missing ones.
 - **Current bot state lives in `docs/`, not here.** `CLAUDE.md` holds stable project conventions and invariants; the moving target (what's wired right now) is maintained there.
 
-A vendor-neutral long-term memory system for a single-user, always-on LLM personal assistant. The canonical spec is `SPEC.v3.md`. Earlier drafts (`SPEC.md` = v1, `SPEC.v2.md`) are kept for history — do not edit them. New revisions go as `SPEC.vN.md`.
+A vendor-neutral long-term memory system for a single-user, always-on LLM personal assistant. `SPEC.md`, `SPEC.v2.md`, and `SPEC.v3.md` are kept as historical artefacts — **do not edit them and do not create `SPEC.v4.md` or any newer revision**. All current architectural decisions live in [`docs/`](docs/index.md) instead, co-edited with the code they describe.
 
 ## Tone
 
@@ -35,7 +35,7 @@ No embeddings, no vector DB, no vendor-specific storage.
 
 Behavior (scripts, hooks, skills) lives in **this repo** under `.claude/`. Data (logs, notes) lives in a **separate** vault at `$GINARR_VAULT_ROOT` — by default `~/obsidian-vaul/chat-memory/`. The split is deliberate: data is format-portable and long-lived; behavior is runtime-specific and replaceable.
 
-Current wiring is documented in [`docs/architecture.md`](docs/architecture.md). SPEC.v3's original layout put `skills/`, `agents/`, and `_tools/` inside the vault — that is superseded, pending formalisation in SPEC v4.
+Current wiring is documented in [`docs/architecture.md`](docs/architecture.md). SPEC.v3's original layout put `skills/`, `agents/`, and `_tools/` inside the vault — that is superseded by the present split (behaviour in `.claude/`, data in the vault); the change is reflected in `docs/architecture.md`, not in any new SPEC revision.
 
 ## Naming and language conventions
 
