@@ -27,7 +27,7 @@ Only `index.md` files. Never any other file. In an existing `index.md`, only app
 
 ## What it skips
 
-`.git/`, `.obsidian/`, `node_modules/`, `__pycache__/`, `.venv/`, `dist/`, `build/`, any path component starting with `_`, `attachments/` subtrees.
+`.git/`, `.obsidian/`, `node_modules/`, `__pycache__/`, `.venv/`, `dist/`, `build/`, `_pending.md`, `_tools/`, any `_attachments/` or `attachments/` subtree. Underscore-prefixed names otherwise are NOT excluded — they are commonly used as a sort-order hack (e.g. `_Dashboard/`, `__TODO.md`).
 
 ## Where to look when something's off
 
@@ -36,4 +36,4 @@ Only `index.md` files. Never any other file. In an existing `index.md`, only app
 | Proposed plan is way too big           | Root is broader than intended — narrow it: `/lint-indexes wiki/`.             |
 | An entry was missed                    | Either it's under an excluded path, or the skill failed to detect it.         |
 | Apply ran but `index.md` looks unchanged | Entries were already linked under different anchor text; check the existing index manually. |
-| Owner-private file appeared in an index | Bug — the file should have been under a `_`-prefixed name or in `attachments/`. |
+| Owner-private file appeared in an index | Bug — the file should have been `_pending.md`, under `_tools/`, or under an `attachments/` / `_attachments/` subtree. |

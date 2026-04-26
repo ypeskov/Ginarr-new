@@ -40,8 +40,11 @@ The owner can also pass intent in plain language: "lint indexes in `wiki/`", "о
 Hard-coded skip list (not descended into, not indexed, not written to):
 
 - `.git/`, `.obsidian/`, `node_modules/`, `__pycache__/`, `.venv/`, `dist/`, `build/`
-- Any path component starting with `_` (e.g. `_pending.md`, `_tools/`) — owner-private scratch
-- `attachments/` subtrees (binary blobs, not navigable)
+- `_pending.md` — capture skill's pending-review queue.
+- `_tools/` — legacy vault-side tools directory (per SPEC.v3, now migrated to the repo).
+- `_attachments/` and `attachments/` subtrees — binary blobs, not navigable.
+
+**Underscore-prefixed names are otherwise NOT excluded.** Owners commonly use leading underscores as a sort-order hack — e.g. `_Dashboard/` to pin a folder to the top of Obsidian's file explorer, or `__TODO.md` to pin a file. Treat those as normal directories and files: index them, list them, and let them appear in their parent's index.
 
 ## Workflow
 
@@ -143,8 +146,8 @@ This guards against the skill writing into the owner's personal Obsidian notes b
 - Don't rename or move files. The skill only edits `index.md`.
 - Don't delete `index.md`. If a directory was indexed and is now empty, the index file stays — reduce to just the heading.
 - Don't sort or re-order existing bullets in an existing `index.md`.
-- Don't write inside `_*` (underscore-prefixed) paths — those are owner scratch.
-- Don't index `attachments/` subtrees.
+- Don't write inside `_pending.md`, `_tools/`, or `_attachments/` — those are scratch / Obsidian internals.
+- Don't index `attachments/` or `_attachments/` subtrees.
 - Don't write outside `$GINARR_VAULT_ROOT` without an explicit owner confirmation in the conversation, even when `--apply` was passed.
 
 ## See also
