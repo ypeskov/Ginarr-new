@@ -1,7 +1,7 @@
 ---
 name: review-pending
 description: >
-  Walk the owner through notes/_pending.md candidates one at a time:
+  Walk the owner through wiki/_pending.md candidates one at a time:
   present the top block, accept save / drop / skip / edit, and apply
   the action to the vault. Consult whenever the user invokes /review,
   or replies "save"/"drop"/"skip"/"edit" (or the Russian equivalents
@@ -15,7 +15,7 @@ metadata:
 
 # review-pending
 
-Single-owner queue processor for `$GINARR_VAULT_ROOT/notes/_pending.md`. Low-confidence captures from the `capture` skill land there as blocks. This skill lets the owner process them one-by-one — promote to a real note, drop, skip, or edit — via the `/review` slash command (the primary trigger) or bare action words after a candidate has been presented.
+Single-owner queue processor for `$GINARR_VAULT_ROOT/wiki/_pending.md`. Low-confidence captures from the `capture` skill land there as blocks. This skill lets the owner process them one-by-one — promote to a real note, drop, skip, or edit — via the `/review` slash command (the primary trigger) or bare action words after a candidate has been presented.
 
 ## File layout
 
@@ -26,7 +26,7 @@ Single-owner queue processor for `$GINARR_VAULT_ROOT/notes/_pending.md`. Low-con
 - ts: <UTC ISO>
 - source: logs/YYYY/MM/YYYY-MM-DD.jsonl#ts=...
 - proposed type: user | feedback | project | reference | decision
-- proposed path: notes/<subdir>/<snake_case>.md
+- proposed path: wiki/<subdir>/<snake_case>.md
 
 <body / quote>
 ```
@@ -39,7 +39,7 @@ Blocks are delimited by `## ` at column 0. The template header is everything bef
 2. **Empty queue?** → one line, no reaction: `В очереди ничего нет.` / `Queue is empty.` (match language). Stop.
 3. **Top block?** → Present in the reply:
    - Candidate body (truncate to ~500 chars, append `…` and `(полный блок в _pending.md)` if longer).
-   - `Предложенный путь: notes/<dir>/<name>.md` (or English equivalent).
+   - `Предложенный путь: wiki/<dir>/<name>.md` (or English equivalent).
    - Inline prompt: `/review save | drop | skip | edit` (or: "ответь save/drop/skip/edit").
 4. **On next action** (either `/review <action>` or a bare action word in a Telegram reply after the prompt):
    - `save` / `сохрани` / `да` → promote (below), remove the block, then present the next candidate.
@@ -56,13 +56,13 @@ When the owner says save on a top block:
    - `name` = basename of the proposed path without `.md`.
    - `description` = the `##` title line.
    - `type` = from `- proposed type:` line.
-   - `directory` = derived from the `- proposed path:` line (`notes/<dir>/…`).
+   - `directory` = derived from the `- proposed path:` line (`wiki/<dir>/…`).
    - `source` = from `- source:` line.
    - `body` = everything after the bullet list, trimmed.
-2. **Dedup.** `grep -rli "<name-core-word>" "$GINARR_VAULT_ROOT/notes/"`. If a file in the same `type`'s directory covers the topic:
+2. **Dedup.** `grep -rli "<name-core-word>" "$GINARR_VAULT_ROOT/wiki/"`. If a file in the same `type`'s directory covers the topic:
    - Read it. If compatible → merge (append a section to the body, bump `updated:`, keep `status` as is).
    - If contradictory → Conflict protocol (from the `capture` skill): keep both claims with dates, set `status: unconfirmed`, ask the owner before finalising. Do not remove the pending block until the conflict is resolved.
-3. **No match.** `mkdir -p "$GINARR_VAULT_ROOT/notes/<dir>/"`, then Write:
+3. **No match.** `mkdir -p "$GINARR_VAULT_ROOT/wiki/<dir>/"`, then Write:
    ```yaml
    ---
    type: <type>
@@ -77,7 +77,7 @@ When the owner says save on a top block:
    Body = the block body, verbatim.
 4. **Remove the block from `_pending.md`.** Read → rewrite as `header + "\n\n" + join(remaining_blocks, "\n\n")` → Write. Never overwrite the header.
 5. **Feedback:**
-   - Telegram: 💾 reaction on the owner's `save` message (fallback 🧠 → 👌), then one short reply `Saved: notes/<dir>/<file>.md`.
+   - Telegram: 💾 reaction on the owner's `save` message (fallback 🧠 → 👌), then one short reply `Saved: wiki/<dir>/<file>.md`.
    - Terminal (no `<channel>` tag): same short line, no reaction.
 
 ## Edit sub-flow
@@ -85,14 +85,14 @@ When the owner says save on a top block:
 1. Show the current fields (title, proposed type, proposed path, body).
 2. Ask `Что меняем?` / `What should change?` — accept freeform natural-language edits:
    - "type → feedback" — change the frontmatter type (and therefore directory).
-   - "путь → notes/user/foo.md" — change the target filename.
+   - "путь → wiki/user/foo.md" — change the target filename.
    - "переформулируй body: …" — rewrite the body text.
    - Combinations are fine.
 3. Apply to an in-memory copy. Show the updated fields as a preview and ask for confirmation (`применить? да/нет`).
 4. **Confirm** → run the normal save flow with the edited fields (dedup, write note, remove block, feedback).
 5. **Cancel** → leave the pending block unchanged, move to the next candidate.
 
-Edits never persist into `_pending.md`. Either they land in `notes/` (on confirm) or they are discarded (on cancel).
+Edits never persist into `_pending.md`. Either they land in `wiki/` (on confirm) or they are discarded (on cancel).
 
 ## Skip semantics
 
@@ -106,7 +106,7 @@ Before saving, scan the remaining pending blocks for a matching topic (same name
 
 ## Threshold-latch maintenance
 
-`capture` sets a latch file `$GINARR_VAULT_ROOT/notes/.pending_notified` when the queue crosses 5 candidates upward, so the owner is pinged once per crossing. Review is responsible for clearing the latch on the downward crossing:
+`capture` sets a latch file `$GINARR_VAULT_ROOT/wiki/.pending_notified` when the queue crosses 5 candidates upward, so the owner is pinged once per crossing. Review is responsible for clearing the latch on the downward crossing:
 
 - After any block removal (save, drop), count the remaining `## ` headings in `_pending.md`. If the count is **below 5** and `.pending_notified` exists → delete the latch. The next time the queue climbs back past 5, `capture` will re-notify.
 - Skip (rotate to tail) does not change the count — no latch action needed.
@@ -114,18 +114,18 @@ Before saving, scan the remaining pending blocks for a matching topic (same name
 
 ## Write boundary
 
-`review-pending` writes the vault — both `notes/<type>/<file>.md` (new or merged) and `notes/_pending.md` (block removal, rotation). Unlike `recall`, it is not read-only. All writes happen at the explicit direction of the owner; never auto-merge on ambiguity.
+`review-pending` writes the vault — both `wiki/<type>/<file>.md` (new or merged) and `wiki/_pending.md` (block removal, rotation). Unlike `recall`, it is not read-only. All writes happen at the explicit direction of the owner; never auto-merge on ambiguity.
 
 ## Telegram reply shape
 
 | Action | Reaction (best-effort) | Text reply |
 |---|---|---|
 | Candidate prompt | — | body + proposed path + action prompt |
-| Save | 💾 (→ 🧠 → 👌) | `Saved: notes/<dir>/<file>.md` |
+| Save | 💾 (→ 🧠 → 👌) | `Saved: wiki/<dir>/<file>.md` |
 | Drop | 👌 | — |
 | Skip | 👌 | — |
 | Edit (preview) | — | updated fields + confirm prompt |
-| Edit (applied) | 💾 | `Saved: notes/<dir>/<file>.md` |
+| Edit (applied) | 💾 | `Saved: wiki/<dir>/<file>.md` |
 | Conflict | — | both claims + question |
 | Empty queue | — | one line |
 

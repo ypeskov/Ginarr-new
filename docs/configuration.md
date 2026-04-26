@@ -12,7 +12,7 @@ Sourced by `.claude/scripts/ginarr-bot.sh` at startup with `set -a`, so every va
 
 | Name                | Purpose                                                                       | Required |
 |---------------------|-------------------------------------------------------------------------------|----------|
-| `GINARR_VAULT_ROOT` | Absolute path to the Auto-Wiki vault (data side: `logs/` + `notes/`).       | Yes      |
+| `GINARR_VAULT_ROOT` | Absolute path to the Auto-Wiki vault (data side: `logs/` + `wiki/`).       | Yes      |
 
 If `GINARR_VAULT_ROOT` is unset, `log_event.py` prints a message to stderr and exits 0 — the bot runs, but no events are captured.
 
@@ -54,7 +54,7 @@ All three must align. Missing any one makes `logs/**/*.jsonl` invisible on the M
 
 1. Clone this repo.
 2. `cp .claude/.env.example .claude/.env` and set `GINARR_VAULT_ROOT` to your vault path.
-3. Make sure the vault exists and contains `logs/` and `notes/` (see [architecture.md](architecture.md)).
+3. Make sure the vault exists and contains `logs/` and `wiki/` (see [architecture.md](architecture.md)).
 4. Run `/telegram:configure` in a terminal Claude session to pair the bot token.
 5. Install the cron lines (see the per-script docs for the exact one-liner):
    - Watchdog — every minute, keeps the bot alive: [scripts/ginarr-watchdog.md](scripts/ginarr-watchdog.md).

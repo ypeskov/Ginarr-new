@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """Frontmatter-aware search across the Ginarr vault.
 
-Replaces ad-hoc grep with a scope- and type-aware lookup over notes/ and logs/.
-`notes/` filters by frontmatter type/tag; `logs/` filters by file date.
+Replaces ad-hoc grep with a scope- and type-aware lookup over wiki/ and logs/.
+`wiki/` filters by frontmatter type/tag; `logs/` filters by file date.
 """
 
 import argparse
@@ -39,14 +39,14 @@ def parse_frontmatter(text: str) -> dict:
     return fm
 
 
-def search_notes(vault_root: Path, query: str, type_filter: str | None,
+def search_wiki(vault_root: Path, query: str, type_filter: str | None,
                  tag_filter: str | None) -> list[dict]:
-    notes_dir = vault_root / "notes"
-    if not notes_dir.is_dir():
+    wiki_dir = vault_root / "wiki"
+    if not wiki_dir.is_dir():
         return []
     q_re = re.compile(re.escape(query), re.IGNORECASE)
     hits: list[dict] = []
-    for p in sorted(notes_dir.rglob("*.md")):
+    for p in sorted(wiki_dir.rglob("*.md")):
         try:
             text = p.read_text(encoding="utf-8")
         except OSError:
@@ -108,7 +108,7 @@ def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("query", help="Substring (case-insensitive).")
     parser.add_argument("--vault-root", default=os.environ.get("GINARR_VAULT_ROOT"))
-    parser.add_argument("--scope", choices=["notes", "logs", "both"], default="both")
+    parser.add_argument("--scope", choices=["wiki", "logs", "both"], default="both")
     parser.add_argument("--since", type=parse_date,
                         help="ISO date; restricts log scan to files on/after this date.")
     parser.add_argument("--type", dest="type_filter",
@@ -124,9 +124,9 @@ def main() -> int:
         return 2
     vault_root = Path(args.vault_root).expanduser()
 
-    result = {"notes": [], "logs": []}
-    if args.scope in ("notes", "both"):
-        result["notes"] = search_notes(vault_root, args.query, args.type_filter, args.tag_filter)
+    result = {"wiki": [], "logs": []}
+    if args.scope in ("wiki", "both"):
+        result["wiki"] = search_wiki(vault_root, args.query, args.type_filter, args.tag_filter)
     if args.scope in ("logs", "both"):
         result["logs"] = search_logs(vault_root, args.query, args.since)
 
@@ -134,17 +134,17 @@ def main() -> int:
         print(json.dumps(result, ensure_ascii=False, indent=2))
         return 0
 
-    if result["notes"]:
-        print(f"notes ({len(result['notes'])} hits):")
-        for h in result["notes"]:
+    if result["wiki"]:
+        print(f"wiki ({len(result['wiki'])} hits):")
+        for h in result["wiki"]:
             print(f"  {h['path']}:{h['line']}: {h['text']}")
     if result["logs"]:
-        if result["notes"]:
+        if result["wiki"]:
             print()
         print(f"logs ({len(result['logs'])} hits):")
         for h in result["logs"]:
             print(f"  {h['path']} {h['ts']} [{h['role']}]: {h['content']}")
-    if not result["notes"] and not result["logs"]:
+    if not result["wiki"] and not result["logs"]:
         print(f"No matches for {args.query!r} in {args.scope}.")
     return 0
 

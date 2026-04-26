@@ -15,8 +15,8 @@ This deviation will be reconciled in SPEC v4 alongside the similar skills/agents
 ## Scripts
 
 - [`consolidate.md`](consolidate.md) — report likely-duplicate notes by filename-token / tag similarity. Dry-run only for now.
-- [`search.md`](search.md) — frontmatter-aware grep across `notes/` and `logs/` with scope / type / tag / since filters.
-- [`archive.md`](archive.md) — move retired notes older than a cutoff into `notes/archive/`.
+- [`search.md`](search.md) — frontmatter-aware grep across `wiki/` and `logs/` with scope / type / tag / since filters.
+- [`archive.md`](archive.md) — move retired notes older than a cutoff into `wiki/archive/`.
 
 ## Invariants
 

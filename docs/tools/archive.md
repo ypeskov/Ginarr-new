@@ -1,6 +1,6 @@
 # archive.py
 
-Move retired notes older than a cutoff into `notes/archive/`, preserving the subdirectory layout. Dry-run by default.
+Move retired notes older than a cutoff into `wiki/archive/`, preserving the subdirectory layout. Dry-run by default.
 
 ## Source
 
@@ -26,15 +26,15 @@ Both must hold for a note to be a candidate:
 1. Frontmatter `status:` is `retired` or `archived`.
 2. Frontmatter `updated:` ≤ today − `--older-than`.
 
-Notes under `notes/archive/` and `_`-prefixed files are skipped.
+Notes under `wiki/archive/` and `_`-prefixed files are skipped.
 
 ## `--type`
 
-Defaults to `project`. Accepts any capture type (`user | feedback | project | reference | decision`). The directory mapped follows the capture convention — `project` → `notes/projects/`, `decision` → `notes/decisions/`, others map 1:1.
+Defaults to `project`. Accepts any capture type (`user | feedback | project | reference | decision`). The directory mapped follows the capture convention — `project` → `wiki/projects/`, `decision` → `wiki/decisions/`, others map 1:1.
 
 ## Move semantics
 
-Destination: `notes/archive/<original-relative-path>`. For example, `notes/projects/marathon_2026.md` → `notes/archive/projects/marathon_2026.md`. Parent directories are created as needed. The frontmatter is not rewritten.
+Destination: `wiki/archive/<original-relative-path>`. For example, `wiki/projects/marathon_2026.md` → `wiki/archive/projects/marathon_2026.md`. Parent directories are created as needed. The frontmatter is not rewritten.
 
 ## Scheduling
 

@@ -21,7 +21,7 @@
   - `.claude/.env.example`
   - правка docs: `docs/architecture.md`, `docs/configuration.md`, все `docs/scripts/*.md`, все `docs/skills/*.md` где упоминается `chat-memory`, `CLAUDE.md`
   - проверка: бот стартует, `log_event` пишет в `Auto-Wiki/logs/`, `summarize-day` находит логи
-- [ ] 1.2. `Auto-Wiki/notes/` → `Auto-Wiki/wiki/`
+- [x] 1.2. `Auto-Wiki/notes/` → `Auto-Wiki/wiki/`
   - `mv ~/obsidian-vaul/Auto-Wiki/notes ~/obsidian-vaul/Auto-Wiki/wiki` — структура внутри (`decisions/`, `feedback/`, `projects/`, `reference/`, `user/`, `archive/`) сохраняется
   - найти все скилы, которые пишут в `notes/`: `grep -r notes/ .claude/skills/`
   - обновить `capture`, `recall`, `obsidian`, `obsidian-structure` и любой другой скил, упоминающий `notes/`

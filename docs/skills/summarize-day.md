@@ -50,7 +50,7 @@ The contract matters because `recall` depends on it: vague paraphrases break the
 
 `recall`'s scope-order has the summaries as the new step 2:
 
-1. `notes/` — curated facts.
+1. `wiki/` — curated facts.
 2. `logs/summaries/` — daily index, grep here next.
 3. `logs/<date>.jsonl` — drill into a specific day only.
 4. `_pending.md` — unconfirmed items, on demand.

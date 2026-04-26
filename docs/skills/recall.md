@@ -5,7 +5,7 @@ The skill Claude consults before answering retrospective questions about the own
 ## Source
 
 - Skill: [`.claude/skills/recall/SKILL.md`](../../.claude/skills/recall/SKILL.md) — authoritative behaviour (LLM-facing).
-- Data read: `$GINARR_VAULT_ROOT/notes/` (curated facts) then `$GINARR_VAULT_ROOT/logs/` (raw transcript) and `notes/_pending.md` (unconfirmed candidates). Never written.
+- Data read: `$GINARR_VAULT_ROOT/wiki/` (curated facts) then `$GINARR_VAULT_ROOT/logs/` (raw transcript) and `wiki/_pending.md` (unconfirmed candidates). Never written.
 
 ## When it fires
 
@@ -15,7 +15,7 @@ Retrospective questions from the owner — "what did I say about X", "when did w
 
 Authoritative per SPEC.v3:
 
-1. `notes/` — if a curated note covers the question, answer from it and stop. Notes are the authority; logs are raw material they were derived from.
+1. `wiki/` — if a curated note covers the question, answer from it and stop. Notes are the authority; logs are raw material they were derived from.
 2. `logs/` only if notes do not cover it. Always within a bounded date window.
 3. `_pending.md` on demand, when the question hints at something recent but not yet confirmed. Matches from there are flagged unconfirmed.
 4. Nothing found → say so plainly; do not fabricate.
@@ -31,15 +31,15 @@ If no period is given and notes don't resolve the question, the skill either def
 ## Reply discipline
 
 - Direct answer first, source citation after.
-- Note citation: `— из notes/user/dog_rex.md`.
+- Note citation: `— из wiki/user/dog_rex.md`.
 - Log citation: `"..." — 2026-04-23T11:02Z` (UTC).
-- Pending citation: `— из notes/_pending.md, ещё не подтверждено`.
+- Pending citation: `— из wiki/_pending.md, ещё не подтверждено`.
 - Nothing found: one line, no preface, in the language of the question.
 - Never fabricate an answer when the vault is silent.
 
 ## Write boundary
 
-`recall` reads; it never writes. If a missing capture is noticed during recall (the owner asks about a fact that was told but never landed in `notes/`), the reply flags it. `capture` picks it up on the next natural trigger; `recall` itself does not amend the vault.
+`recall` reads; it never writes. If a missing capture is noticed during recall (the owner asks about a fact that was told but never landed in `wiki/`), the reply flags it. `capture` picks it up on the next natural trigger; `recall` itself does not amend the vault.
 
 ## Relationship to the other memory skills
 
@@ -57,8 +57,8 @@ LLM-driven; no self-test harness. Walk with representative prompts and verify th
 
 | Input | Expected |
 |---|---|
-| "как зовут мою собаку?" | Grep `notes/user/`; match `dog_rex.md`; reply `Рекс — из notes/user/dog_rex.md`. |
+| "как зовут мою собаку?" | Grep `wiki/user/`; match `dog_rex.md`; reply `Рекс — из wiki/user/dog_rex.md`. |
 | "что я вчера вечером говорил про марафон?" | Grep `logs/YYYY/MM/YYYY-MM-DD.jsonl` within the UTC window for yesterday evening (Europe/Sofia). Quote matching events with timestamps. |
-| "что у меня в vault про нейронки?" | Grep across `notes/`, list matching files with one-line summaries. |
+| "что у меня в vault про нейронки?" | Grep across `wiki/`, list matching files with one-line summaries. |
 | "когда у меня следующая встреча?" | Nothing found → "В vault ничего по этой теме нет." No fabrication. |
 | "кажется я недавно думал про смену БД?" | `_pending.md` has a matching block → quote it, flag as unconfirmed. |

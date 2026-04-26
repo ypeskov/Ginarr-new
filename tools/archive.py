@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Move retired notes older than a cutoff into notes/archive/.
+"""Move retired notes older than a cutoff into wiki/archive/.
 
 A note is a candidate when its frontmatter has `status: retired` (or
 `archived`) and `updated:` is older than --older-than. Default target is
@@ -56,7 +56,7 @@ def parse_duration(s: str) -> timedelta:
 def candidates(vault_root: Path, older_than: timedelta, type_name: str) -> list[tuple[Path, date]]:
     cutoff = date.today() - older_than
     subdir_name = PLURAL_DIR.get(type_name, type_name)
-    subdir = vault_root / "notes" / subdir_name
+    subdir = vault_root / "wiki" / subdir_name
     if not subdir.is_dir():
         return []
     out: list[tuple[Path, date]] = []
@@ -80,8 +80,8 @@ def candidates(vault_root: Path, older_than: timedelta, type_name: str) -> list[
 
 
 def move_to_archive(vault_root: Path, src: Path) -> Path:
-    notes_dir = vault_root / "notes"
-    dst = notes_dir / "archive" / src.relative_to(notes_dir)
+    wiki_dir = vault_root / "wiki"
+    dst = wiki_dir / "archive" / src.relative_to(wiki_dir)
     dst.parent.mkdir(parents=True, exist_ok=True)
     shutil.move(str(src), str(dst))
     return dst
@@ -114,7 +114,7 @@ def main() -> int:
         print(f"  - {p.relative_to(vault_root)} (updated {updated})")
 
     if not args.apply:
-        print("\nDry-run. Re-run with --apply to move these into notes/archive/.")
+        print("\nDry-run. Re-run with --apply to move these into wiki/archive/.")
         return 0
 
     print("\nMoving…")

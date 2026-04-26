@@ -41,7 +41,7 @@ The raw JSONL is authoritative but expensive to grep. A daily roll-up sits next 
 
 - **`logs/summaries/YYYY/MM/<date>.md`** — built by the [`summarize-day`](skills/summarize-day.md) skill at 00:15 UTC each night. One file per UTC date, ~1KB, dry bullet list of topics, people, decisions, paths.
 - The `summaries/` subtree is parallel to the per-month log folders, never nested inside them, so a `grep -r` over only `summaries/` ignores the heavy raw logs.
-- The `recall` skill greps in this order: `notes/` → `logs/summaries/` → a single day's `logs/<date>.jsonl`. Summaries narrow the search; the JSONL only opens for the day(s) a summary points to.
+- The `recall` skill greps in this order: `wiki/` → `logs/summaries/` → a single day's `logs/<date>.jsonl`. Summaries narrow the search; the JSONL only opens for the day(s) a summary points to.
 - Today's UTC date never has a summary (the day is still being written). `recall` falls through to today's JSONL directly when the question is about today.
 
 ## What is NOT here yet

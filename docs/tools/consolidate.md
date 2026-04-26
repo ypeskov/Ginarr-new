@@ -16,7 +16,7 @@ Exits `0` on success (whether or not groups were found), `2` on config errors.
 
 ## What it does
 
-1. Walks `$GINARR_VAULT_ROOT/notes/**/*.md`, skipping names starting with `_` (pending / proposal scratchpads) and anything under `archive/`.
+1. Walks `$GINARR_VAULT_ROOT/wiki/**/*.md`, skipping names starting with `_` (pending / proposal scratchpads) and anything under `archive/`.
 2. Parses each note's frontmatter (best-effort — understands `key: value` and `key: [a, b]`).
 3. Groups notes that share a `type` and are judged similar by either:
    - **filename-token Jaccard** ≥ `--threshold` (default `0.6`) — treats `dog_rex.md` and `rex_dog.md` as similar, but not `dog_rex.md` vs `marathon_plan.md`.

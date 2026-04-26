@@ -10,7 +10,7 @@ Frontmatter-aware grep across the Ginarr vault. Use when the `recall` skill's sc
 
 ```
 GINARR_VAULT_ROOT=… python3 tools/search.py <query> \
-    [--scope notes|logs|both] \
+    [--scope wiki|logs|both] \
     [--since YYYY-MM-DD] \
     [--type user|feedback|project|reference|decision] \
     [--tag <tag>] \
@@ -23,10 +23,10 @@ Positional `<query>` is a case-insensitive substring (escaped before regex compi
 
 | Flag | Applies to | Effect |
 |---|---|---|
-| `--scope` | both | `notes` only, `logs` only, or `both` (default). |
-| `--since` | logs | Drop log files whose date (from `YYYY-MM-DD.jsonl` filename) is before this date. Notes scope unaffected — notes don't carry a stable date in the filename. |
-| `--type` | notes | Require frontmatter `type:` to match. |
-| `--tag` | notes | Require the named tag to be in the note's `tags:` list. |
+| `--scope` | both | `wiki` only, `logs` only, or `both` (default). |
+| `--since` | logs | Drop log files whose date (from `YYYY-MM-DD.jsonl` filename) is before this date. Wiki scope unaffected — notes don't carry a stable date in the filename. |
+| `--type` | wiki | Require frontmatter `type:` to match. |
+| `--tag` | wiki | Require the named tag to be in the note's `tags:` list. |
 | `--json` | both | Emit machine-readable JSON instead of human output. |
 
 ## Output shapes
@@ -34,8 +34,8 @@ Positional `<query>` is a case-insensitive substring (escaped before regex compi
 ### Human (default)
 
 ```
-notes (3 hits):
-  notes/user/dog_rex.md:5: description: user's dog — a border collie, 4 years old
+wiki (3 hits):
+  wiki/user/dog_rex.md:5: description: user's dog — a border collie, 4 years old
 
 logs (2 hits):
   logs/2026/04/2026-04-23.jsonl 2026-04-23T14:32:01Z [user]: what was the …
@@ -45,7 +45,7 @@ logs (2 hits):
 
 ```json
 {
-  "notes": [{"path": "notes/user/dog_rex.md", "line": 5, "text": "…"}],
+  "wiki": [{"path": "wiki/user/dog_rex.md", "line": 5, "text": "…"}],
   "logs":  [{"path": "logs/…", "ts": "2026-04-23T14:32:01Z", "role": "user", "content": "…"}]
 }
 ```

@@ -49,10 +49,10 @@ def jaccard(a: set, b: set) -> float:
 
 
 def find_notes(vault_root: Path):
-    notes_dir = vault_root / "notes"
-    if not notes_dir.is_dir():
+    wiki_dir = vault_root / "wiki"
+    if not wiki_dir.is_dir():
         return
-    for p in notes_dir.rglob("*.md"):
+    for p in wiki_dir.rglob("*.md"):
         if p.name.startswith("_"):
             continue
         if "archive" in p.parts:
@@ -112,8 +112,8 @@ def main() -> int:
         return 2
 
     vault_root = Path(args.vault_root).expanduser()
-    if not (vault_root / "notes").is_dir():
-        print(f"No notes/ directory under {vault_root}", file=sys.stderr)
+    if not (vault_root / "wiki").is_dir():
+        print(f"No wiki/ directory under {vault_root}", file=sys.stderr)
         return 2
 
     groups = group_duplicates(vault_root, args.threshold)
