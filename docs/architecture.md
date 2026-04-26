@@ -21,7 +21,25 @@ The bot repo and the memory vault are **separate** directories with independent 
 
 Rationale for the split: data is format-portable, behavior is runtime-specific; keeping them apart avoids accidentally coupling a multi-year memory store to a single agent runtime. The vendor-neutrality argument was first laid out in `SPEC.v3.md` §"Vendor neutrality" (kept as a historical artefact, not edited going forward).
 
-## Write-path
+## Vault layout
+
+```
+$GINARR_VAULT_ROOT/
+├── logs/
+│   ├── YYYY/MM/YYYY-MM-DD.jsonl   ← raw event log (one line per turn)
+│   └── summaries/YYYY/MM/<date>.md ← daily roll-ups (built nightly)
+└── wiki/
+    ├── entities/
+    │   ├── _owner.md               ← consolidated owner-meta page
+    │   └── <slug>.md               ← one page per person/project/place/tech/org/event
+    ├── _pending.md                 ← low-confidence captures awaiting /review
+    ├── _health/<date>.md           ← lint-wiki audit reports
+    └── archive/migration-2026-04-26/ ← pre-entity-model originals (read-only)
+```
+
+Idea inspiration: Karpathy's [LLM-managed wiki gist](https://gist.github.com/karpathy/442a6bf555914893e9891c11519de94f). The `logs/` slot is "raw chat", `logs/summaries/` is the daily index, `wiki/entities/` is the curated knowledge layer.
+
+## Write-path A: log events (hook-driven)
 
 Every conversational turn flows through Claude Code hooks into the vault as one JSONL event.
 
@@ -35,18 +53,49 @@ All content is passed through `redactor.py` (Layer 2 regex + Layer 3 owner denyl
 
 See [hooks.md](hooks.md) for the extraction details and [scripts/log_event.md](scripts/log_event.md) for the implementation.
 
+## Write-path B: entity pages (skill-driven)
+
+The hook-driven log is raw material. The curated layer — `wiki/entities/` — is built by two skills that share the same write target:
+
+- [`capture`](skills/capture.md) — owner-action-driven. Triages an in-conversation statement and either writes directly to `wiki/entities/<slug>.md` (or `_owner.md` for owner-meta), or queues it in `wiki/_pending.md` for `/review`. Fires whenever the owner states a fact, preference, or decision.
+- [`ingest-and-weave`](skills/ingest-and-weave.md) — cron-driven. Reads each new daily summary (built by `summarize-day`) and weaves the mentioned entities into the same `wiki/entities/<slug>.md` pages. Never writes to `_owner.md` (that page is owner-action territory). Idempotent: facts already on a page are not duplicated; contradictions get a `## Conflicts` marker.
+
+Both skills append, never overwrite. Conflicts surface as a marker plus a question to the owner; resolved through `/review` or by direct edit in Obsidian.
+
+The previous SPEC.v3 layout used per-type folders (`wiki/{decisions,feedback,projects,reference,user}/`). On 2026-04-26 (auto-wiki roadmap step 3.4) those collapsed into the entity-page model and the originals moved to `wiki/archive/migration-2026-04-26/`.
+
 ## Read-path index
 
-The raw JSONL is authoritative but expensive to grep. A daily roll-up sits next to it as a homemade index.
+The raw JSONL is authoritative but expensive to grep. A daily roll-up and the entity pages sit next to it as homemade indexes.
 
-- **`logs/summaries/YYYY/MM/<date>.md`** — built by the [`summarize-day`](skills/summarize-day.md) skill at 00:15 UTC each night. One file per UTC date, ~1KB, dry bullet list of topics, people, decisions, paths.
-- The `summaries/` subtree is parallel to the per-month log folders, never nested inside them, so a `grep -r` over only `summaries/` ignores the heavy raw logs.
-- The `recall` skill greps in this order: `wiki/` → `logs/summaries/` → a single day's `logs/<date>.jsonl`. Summaries narrow the search; the JSONL only opens for the day(s) a summary points to.
-- Today's UTC date never has a summary (the day is still being written). `recall` falls through to today's JSONL directly when the question is about today.
+- **`wiki/entities/`** — primary read source. The [`recall`](skills/recall.md) skill greps it first; if an entity page covers the question, the answer is quoted from there.
+- **`logs/summaries/YYYY/MM/<date>.md`** — built by [`summarize-day`](skills/summarize-day.md) at 00:15 UTC each night. One file per UTC date, ~1KB, dry bullet list of topics, people, decisions, paths.
+- **`logs/YYYY/MM/<date>.jsonl`** — raw event log, opened only on the days the summary flagged.
+- **`wiki/_pending.md`** — unconfirmed candidates, consulted on demand.
+- **Today's UTC date** has no summary (still being written). `recall` falls through to today's JSONL directly.
+
+The `summaries/` subtree is parallel to the per-month log folders, never nested inside them, so a `grep -r` over only `summaries/` ignores the heavy raw logs.
+
+## Daily cron chain
+
+| When (UTC)      | Script                                                                   | Skill / purpose                                                            |
+|-----------------|--------------------------------------------------------------------------|----------------------------------------------------------------------------|
+| `* * * * *`     | [`ginarr-watchdog.sh`](scripts/ginarr-watchdog.md)                       | Keep the bot tmux session and Telegram plugin alive.                       |
+| `15 0 * * *`    | [`summarize-day.sh`](scripts/summarize-day.md)                           | Roll up yesterday's `logs/<date>.jsonl` into `logs/summaries/`.            |
+| `25 0 * * *`    | [`ingest-and-weave.sh`](scripts/ingest-and-weave.md)                     | Weave entities from the new daily summary into `wiki/entities/`. Chained ten minutes after `summarize-day` to give it time to finish. |
+| `0 9 * * 0`     | [`lint-wiki-reminder.sh`](scripts/lint-wiki-reminder.md)                 | Weekly Telegram nudge to run `/lint-wiki` manually. Does NOT auto-run the lint. |
+
+The chain is intentionally sequential (`summarize-day` → `ingest-and-weave`) but uncoupled (separate cron lines, not a single wrapper) so a failure in one does not block the other.
+
+## Auxiliary skills
+
+Not part of the write/read path itself, but maintain navigability:
+
+- [`lint-indexes`](skills/lint-indexes.md) — ensures every directory in the vault (and optionally the main Obsidian vault) has an `index.md` listing its contents. Read-only by default; `--apply` writes.
+- [`lint-wiki`](skills/lint-wiki.md) — health check on `wiki/entities/`: contradictions, orphans, missing cross-references, frontmatter consistency. Writes a report to `wiki/_health/<date>.md`. Manual; the cron above only nudges.
+- [`cross-link`](skills/cross-link.md) — proposes `[[wikilink]]` insertions between the main Obsidian vault and `wiki/entities/`. Manual, dry-run by default; `--apply` writes only on owner confirmation.
 
 ## What is NOT here yet
 
-- **Consolidation / search / archive tools** — only `redactor.py` has been built from SPEC.v3 §"Portable tools".
-- **Attachment materialisation for non-image Telegram content** — `voice`, `audio`, `document` and similar kinds produce `[kind: unresolved:<file_id>]` markers because the agent, not the hook, downloads them. A backfill mechanism is not yet wired.
-- **Skills** — only `create-skill` is installed (copied from OpenClaw for scaffolding). The six project-specific skills (`capture`, `recall`, `review`, `consolidate`, `redact`, `nolog`) are not yet built.
-- **Attachment markers** (`[image: …]`, `[file: …]`, `[audio: …]`) — the write-path currently logs prompt text as-is; Telegram-specific attachment handling comes later.
+- **Consolidation tool** — `tools/consolidate.py` exists as a dry-run dup-detector, but a `consolidate` skill that wraps it (review queue → apply) is not yet built.
+- **Attachment materialisation for non-image Telegram content** — `voice`, `audio`, `document` and similar kinds produce `[kind: unresolved:<file_id>]` markers because the agent, not the hook, downloads them. A backfill mechanism that promotes `unresolved:<id>` to a real path once the download lands is not yet wired.

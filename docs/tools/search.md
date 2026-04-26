@@ -35,7 +35,7 @@ Positional `<query>` is a case-insensitive substring (escaped before regex compi
 
 ```
 wiki (3 hits):
-  wiki/user/dog_rex.md:5: description: user's dog — a border collie, 4 years old
+  wiki/entities/dog_rex.md:5: description: user's dog — a border collie, 4 years old
 
 logs (2 hits):
   logs/2026/04/2026-04-23.jsonl 2026-04-23T14:32:01Z [user]: what was the …
@@ -45,10 +45,12 @@ logs (2 hits):
 
 ```json
 {
-  "wiki": [{"path": "wiki/user/dog_rex.md", "line": 5, "text": "…"}],
+  "wiki": [{"path": "wiki/entities/dog_rex.md", "line": 5, "text": "…"}],
   "logs":  [{"path": "logs/…", "ts": "2026-04-23T14:32:01Z", "role": "user", "content": "…"}]
 }
 ```
+
+The `--type` filter still works against frontmatter `type:` values (`user | feedback | project | reference | decision`) but the legacy directory layout it was designed to mirror no longer exists — see [archive.md](archive.md) §"--type" for the same caveat. After the 2026-04-26 entity-page migration, all live notes sit in `wiki/entities/` regardless of `type`.
 
 Log `content` is truncated to 200 chars with `…` appended.
 

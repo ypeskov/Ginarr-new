@@ -1,12 +1,12 @@
 # `/review` — walk the pending queue
 
-The slash command + skill the owner uses to process `wiki/_pending.md` candidates. Third of the three SPEC.v3 memory skills (`capture` / `recall` / `review`).
+The slash command + skill the owner uses to process `wiki/_pending.md` candidates. Third of the three memory skills (`capture` / `recall` / `review`).
 
 ## Source
 
 - Slash command: [`.claude/commands/review.md`](../../.claude/commands/review.md) — user-facing trigger.
 - Skill: [`.claude/skills/review-pending/SKILL.md`](../../.claude/skills/review-pending/SKILL.md) — workflow, dedup rules, Telegram feedback.
-- Data: `$GINARR_VAULT_ROOT/wiki/_pending.md` (read + rewrite), `$GINARR_VAULT_ROOT/wiki/<type>/` (new files on save).
+- Data: `$GINARR_VAULT_ROOT/wiki/_pending.md` (read + rewrite), `$GINARR_VAULT_ROOT/wiki/entities/` (new or appended pages on save).
 
 **Skill naming:** the filesystem directory is `review-pending` (not `review`) to avoid colliding with a built-in `review` skill for PR reviews. The user-facing slash command is still `/review`.
 
@@ -18,17 +18,17 @@ The owner explicitly invokes `/review` to drain the pending queue. The `capture`
 
 | Command | Alias (RU) | Effect |
 |---|---|---|
-| `/review` | — | Show the top block + path + action prompt |
-| `/review save` | `сохрани` / `да` | Promote the top block to `wiki/<type>/<name>.md` with `status: confirmed`, remove from queue, show next |
+| `/review` | — | Show the top block + proposed entity + action prompt |
+| `/review save` | `сохрани` / `да` | Promote the top block to `wiki/entities/<slug>.md` (append to existing page or create new), remove from queue, show next |
 | `/review drop` | `удали` / `нет` | Remove the top block without writing a note, show next |
 | `/review skip` | `пропусти` / `потом` | Rotate the top block to the end of the queue, show next |
-| `/review edit` | `правь` | Enter edit sub-flow (change type / path / body) before saving |
+| `/review edit` | `правь` | Enter edit sub-flow (change entity / section / body) before saving |
 
 After a candidate is shown, bare action words in the owner's next reply are also accepted — the skill's trigger description picks them up contextually.
 
 ## Queue mechanics
 
-`_pending.md` is a plain-Markdown queue:
+`_pending.md` is a plain-Markdown queue. Blocks emitted by the post-migration `capture` skill use the entity-page shape:
 
 ```
 # Pending review
@@ -37,8 +37,8 @@ After a candidate is shown, bare action words in the owner's next reply are also
 ## <short title>
 - ts: <UTC ISO>
 - source: logs/YYYY/MM/YYYY-MM-DD.jsonl#ts=...
-- proposed type: user | feedback | project | reference | decision
-- proposed path: wiki/<subdir>/<snake_case>.md
+- proposed entity: <slug or _owner>
+- proposed section: <e.g. Health, Communication preferences, Facts>
 
 <body>
 ```
@@ -47,13 +47,15 @@ After a candidate is shown, bare action words in the owner's next reply are also
 - The template header is preserved on every rewrite.
 - The queue is FIFO by default; `skip` rotates to tail.
 
-## Save → note promotion
+Legacy blocks written before 2026-04-26 may still carry the old `proposed type:` / `proposed path: wiki/<dir>/<name>.md` shape. The skill accepts both shapes and asks for a target section when the legacy form omits it. Once the queue is drained the legacy path is dead.
 
-Promoting a block produces a file in `wiki/<type>/<name>.md` with full frontmatter (`type`, `name`, `description`, `created`, `updated`, `status: confirmed`, `source`). Dedup runs first: if the name/topic already has a note, the skill offers to merge. Contradictions trigger the conflict protocol from the `capture` skill (keep both claims dated, `status: unconfirmed`, ask the owner).
+## Save → entity promotion
+
+Promoting a block appends a fact bullet to `wiki/entities/<slug>.md` under the proposed section, with a date anchor (`[[YYYY-MM-DD]]`) linking back to the daily summary. If the entity page does not exist yet, it is created with the standard entity frontmatter (`name`, `aliases`, `type`, `created`, `updated`, `related`). Dedup runs first: if the same fact already lives on the page, the save is a no-op. Contradictions trigger the conflict protocol from the `capture` skill (keep both claims dated, add a `## Conflicts` entry, ask the owner).
 
 ## Edit sub-flow
 
-Freeform natural-language edits: type change, path change, body rewrite, or combinations. Preview → confirm → save. Cancel leaves the pending block untouched.
+Freeform natural-language edits: entity change, section change, body rewrite, or combinations. Preview → confirm → save. Cancel leaves the pending block untouched.
 
 ## Telegram feedback
 
@@ -80,9 +82,9 @@ LLM-driven; no self-test harness. Walk manually:
 | Input | Expected |
 |---|---|
 | `/review` on an empty queue | `В очереди ничего нет.` (or English match) |
-| `/review` with one block | Body + proposed path + action prompt |
-| `/review save` | File created at `wiki/<type>/<name>.md`, block removed, next candidate shown (or empty-queue line) |
-| `/review drop` | Block removed, no file created |
+| `/review` with one block | Body + proposed entity + action prompt |
+| `/review save` | Fact appended (or new page created) at `wiki/entities/<slug>.md`, block removed, next candidate shown (or empty-queue line) |
+| `/review drop` | Block removed, no entity write |
 | `/review skip` | Block moved to tail of `_pending.md`, next candidate shown |
-| `/review edit` → change type → save | File created at the new type's directory, block removed |
-| `save` with an existing note on the same topic | Dedup triggered: merge or conflict protocol |
+| `/review edit` → change entity → save | Fact appended to the new entity's page, block removed |
+| `save` with the same fact already on the entity page | Dedup triggered: no-op or conflict protocol |

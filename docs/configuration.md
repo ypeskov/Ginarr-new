@@ -59,6 +59,8 @@ All three must align. Missing any one makes `logs/**/*.jsonl` invisible on the M
 5. Install the cron lines (see the per-script docs for the exact one-liner):
    - Watchdog — every minute, keeps the bot alive: [scripts/ginarr-watchdog.md](scripts/ginarr-watchdog.md).
    - Daily summaries — 00:15 UTC, builds the read-path index: [scripts/summarize-day.md](scripts/summarize-day.md).
+   - Entity weaver — 00:25 UTC, weaves entities from each new daily summary into `wiki/entities/`: [scripts/ingest-and-weave.md](scripts/ingest-and-weave.md).
+   - Wiki-lint reminder — Sundays 09:00 UTC, sends a Telegram nudge to run `/lint-wiki` manually: [scripts/lint-wiki-reminder.md](scripts/lint-wiki-reminder.md).
 
 ## Cron lines installed by this repo
 

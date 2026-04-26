@@ -30,11 +30,13 @@ Notes under `wiki/archive/` and `_`-prefixed files are skipped.
 
 ## `--type`
 
-Defaults to `project`. Accepts any capture type (`user | feedback | project | reference | decision`). The directory mapped follows the capture convention — `project` → `wiki/projects/`, `decision` → `wiki/decisions/`, others map 1:1.
+Historical. The flag still exists and accepts the SPEC.v3 capture types (`user | feedback | project | reference | decision`), but those directories no longer exist in the active vault — they were collapsed into `wiki/entities/` on 2026-04-26 (auto-wiki roadmap step 3.4) and the originals moved to `wiki/archive/migration-2026-04-26/`. The flag is therefore only useful for trimming the archived migration tree, not the live vault.
+
+A follow-up will rewrite this tool against the entity-page model (status-based archival of individual `wiki/entities/<slug>.md` pages). Tracked as a known gap, not yet on the roadmap.
 
 ## Move semantics
 
-Destination: `wiki/archive/<original-relative-path>`. For example, `wiki/projects/marathon_2026.md` → `wiki/archive/projects/marathon_2026.md`. Parent directories are created as needed. The frontmatter is not rewritten.
+Destination: `wiki/archive/<original-relative-path>`. For example, `wiki/projects/marathon_2026.md` → `wiki/archive/projects/marathon_2026.md` (under the active layout this only applies to files already inside `wiki/archive/migration-2026-04-26/`). Parent directories are created as needed. The frontmatter is not rewritten.
 
 ## Scheduling
 

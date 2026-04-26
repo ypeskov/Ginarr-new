@@ -10,7 +10,7 @@ Scripts live in [`tools/`](../../tools/) at the repo root (version-controlled). 
 ln -s /path/to/repo/tools "$GINARR_VAULT_ROOT/_tools"
 ```
 
-This deviation will be reconciled in SPEC v4 alongside the similar skills/agents relocation.
+The split (behavior in `~/Ginarr/`, data in `$GINARR_VAULT_ROOT`) is the active design — see [`../architecture.md`](../architecture.md) §"Data / behavior split". No further SPEC revisions are planned; CLAUDE.md treats `SPEC.v3.md` and earlier as historical artefacts.
 
 ## Scripts
 
