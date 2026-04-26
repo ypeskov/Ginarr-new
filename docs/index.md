@@ -16,6 +16,7 @@ Every directory under `docs/` carries an `index.md` listing its files and subdir
 
 ### Subdirectories
 
+- [roadmap/](roadmap/index.md) — active and closed implementation plans (in Russian, with checkboxes).
 - [scripts/](scripts/index.md) — one file per `.claude/scripts/*` utility.
 - [skills/](skills/index.md) — installed Agent Skills, with pointers to their authoritative `SKILL.md`.
 - [tools/](tools/index.md) — standalone maintenance CLIs (`consolidate`, `search`, `archive`) under `tools/` at the repo root.
