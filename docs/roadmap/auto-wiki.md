@@ -13,7 +13,7 @@
 
 Делаем до индексации, чтобы новые `index.md` уже использовали финальные пути.
 
-- [ ] 1.1. `~/obsidian-vaul/chat-memory/` → `~/obsidian-vaul/Auto-Wiki/`
+- [x] 1.1. `~/obsidian-vaul/chat-memory/` → `~/obsidian-vaul/Auto-Wiki/`
   - остановить бота через watchdog или `tmux kill-session -t ginarr`
   - `mv ~/obsidian-vaul/chat-memory ~/obsidian-vaul/Auto-Wiki`
   - `.claude/.env`: `GINARR_VAULT_ROOT=~/obsidian-vaul/Auto-Wiki`
