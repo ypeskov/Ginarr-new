@@ -1,6 +1,6 @@
 # `capture` — write-side memory skill
 
-The skill that decides whether a user statement is worth persisting to the chat-memory vault, and if so to which note type and file. First of the three SPEC.v3 memory skills (`capture` / `recall` / `review`).
+The skill that decides whether a user statement is worth persisting to the Auto-Wiki vault, and if so to which note type and file. First of the three SPEC.v3 memory skills (`capture` / `recall` / `review`).
 
 ## Source
 

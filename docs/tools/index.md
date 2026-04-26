@@ -31,5 +31,5 @@ Per CLAUDE.md §"Anti-patterns", do not put these inside the bot's event loop. U
 
 ```
 # Weekly dup report, mailed to $MAILTO
-30 6 * * 1  GINARR_VAULT_ROOT=$HOME/obsidian-vaul/chat-memory python3 /path/to/repo/tools/consolidate.py
+30 6 * * 1  GINARR_VAULT_ROOT=$HOME/obsidian-vaul/Auto-Wiki python3 /path/to/repo/tools/consolidate.py
 ```

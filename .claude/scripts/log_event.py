@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Write-path hook for Ginarr chat-memory.
+"""Write-path hook for Ginarr Auto-Wiki.
 
 Reads Claude Code hook JSON on stdin, appends one JSONL event to
 $GINARR_VAULT_ROOT/logs/YYYY/MM/YYYY-MM-DD.jsonl in UTC.

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Layer 2 + Layer 3 secret redactor for chat-memory.
+"""Layer 2 + Layer 3 secret redactor for Auto-Wiki.
 
 Reads text from a file or stdin, applies regex-based redaction for known
 secret formats (Layer 2) and an optional owner-marked denylist (Layer 3),

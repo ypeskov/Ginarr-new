@@ -1,6 +1,6 @@
 # `summarize-day` — daily log roll-ups
 
-Builds a homemade per-day index over the raw chat-memory JSONL. One Markdown file per UTC date; ~1KB; topics, people, decisions, paths. `recall` greps these first to narrow which day to drill into. The raw `logs/YYYY/MM/YYYY-MM-DD.jsonl` files stay untouched and authoritative.
+Builds a homemade per-day index over the raw Auto-Wiki JSONL. One Markdown file per UTC date; ~1KB; topics, people, decisions, paths. `recall` greps these first to narrow which day to drill into. The raw `logs/YYYY/MM/YYYY-MM-DD.jsonl` files stay untouched and authoritative.
 
 ## Source
 

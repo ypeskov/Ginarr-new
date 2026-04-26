@@ -1,6 +1,6 @@
 # `/nolog` — Layer 4 runtime pause
 
-Slash command that pauses the chat-memory write-path for a conversation window. Implements Layer 4 of SPEC.v3's secret-protection stack: when regex redaction can't help and you just need to keep something out of the log entirely.
+Slash command that pauses the Auto-Wiki write-path for a conversation window. Implements Layer 4 of SPEC.v3's secret-protection stack: when regex redaction can't help and you just need to keep something out of the log entirely.
 
 ## Source
 

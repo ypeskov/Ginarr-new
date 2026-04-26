@@ -1,6 +1,6 @@
 # Architecture
 
-Ginarr is a single-owner, always-on Telegram assistant. Claude Code is the agent runtime; a portable chat-memory vault on the filesystem is the long-term memory.
+Ginarr is a single-owner, always-on Telegram assistant. Claude Code is the agent runtime; a portable Auto-Wiki vault on the filesystem is the long-term memory.
 
 ## Processes
 
@@ -15,7 +15,7 @@ The bot repo and the memory vault are **separate** directories with independent 
 | Path                              | Purpose                                                  | Lifecycle                                                  |
 |-----------------------------------|----------------------------------------------------------|------------------------------------------------------------|
 | `~/Ginarr/` (this repo)           | Behavior: scripts, hooks, skills, configuration.         | Replaceable. Can migrate to Junie or OpenCode by rewiring. |
-| `~/obsidian-vaul/chat-memory/`    | Data: logs, notes. Portable Markdown + JSONL.            | Must survive years and runtime migrations.                 |
+| `~/obsidian-vaul/Auto-Wiki/`    | Data: logs, notes. Portable Markdown + JSONL.            | Must survive years and runtime migrations.                 |
 
 `GINARR_VAULT_ROOT` in `.claude/.env` (gitignored) points the bot at its vault. `ginarr-bot.sh` sources this file before exec'ing Claude, so the variable is inherited by all hook processes.
 

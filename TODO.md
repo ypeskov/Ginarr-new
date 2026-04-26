@@ -4,7 +4,7 @@ Features not yet scheduled for implementation. Short description per entry; deta
 
 ## Multi-vault support
 
-`GINARR_VAULT_ROOT` currently pins the bot to exactly one chat-memory vault: all writes (logs, new notes) go there, recall searches there.
+`GINARR_VAULT_ROOT` currently pins the bot to exactly one Auto-Wiki vault: all writes (logs, new notes) go there, recall searches there.
 
 Add the ability to attach **secondary vaults** alongside the primary:
 

@@ -1,7 +1,7 @@
 ---
 name: capture
 description: >
-  Decide whether a user statement is worth persisting to the chat-memory
+  Decide whether a user statement is worth persisting to the Auto-Wiki
   vault and, if so, to which note type and file. Consult whenever the
   user states a fact about themselves, expresses a preference, gives
   feedback on how to work with them, makes a decision, or explicitly asks

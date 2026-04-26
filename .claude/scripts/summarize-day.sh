@@ -4,7 +4,7 @@
 
 export HOME=/home/krokobot
 export PATH="$HOME/.bun/bin:$HOME/.local/bin:/home/linuxbrew/.linuxbrew/bin:/usr/local/bin:/usr/bin:/bin:$PATH"
-export GINARR_VAULT_ROOT="${GINARR_VAULT_ROOT:-$HOME/obsidian-vaul/chat-memory}"
+export GINARR_VAULT_ROOT="${GINARR_VAULT_ROOT:-$HOME/obsidian-vaul/Auto-Wiki}"
 
 LOG="$HOME/Ginarr/.claude/scripts/logs/summarize-day.log"
 mkdir -p "$(dirname "$LOG")"

@@ -21,7 +21,7 @@ Convenience skills — no interaction with the memory layer, kept here so the as
 - **`/news-digest`** — RSS + Hacker News + ETF portfolio summary. Authoritative: [`.claude/skills/news-digest/SKILL.md`](../../.claude/skills/news-digest/SKILL.md). Operator doc: [`news-digest.md`](news-digest.md).
 - **`/weather`** — Open-Meteo forecast, no API key, default Sofia / 7 days. Authoritative: [`.claude/skills/weather/SKILL.md`](../../.claude/skills/weather/SKILL.md). Operator doc: [`weather.md`](weather.md).
 - **`/calendar-digest`** — Google Calendar agenda via MCP. Authoritative: [`.claude/skills/calendar-digest/SKILL.md`](../../.claude/skills/calendar-digest/SKILL.md). Operator doc: [`calendar-digest.md`](calendar-digest.md).
-- **`obsidian`** — full Obsidian vault access (distinct from Ginarr's `chat-memory/` sub-vault). Authoritative: [`.claude/skills/obsidian/SKILL.md`](../../.claude/skills/obsidian/SKILL.md). Operator doc: [`obsidian.md`](obsidian.md).
+- **`obsidian`** — full Obsidian vault access (distinct from Ginarr's `Auto-Wiki/` sub-vault). Authoritative: [`.claude/skills/obsidian/SKILL.md`](../../.claude/skills/obsidian/SKILL.md). Operator doc: [`obsidian.md`](obsidian.md).
 - **`obsidian-structure`** — folder taxonomy and routing rules for the vault. Authoritative: [`.claude/skills/obsidian-structure/SKILL.md`](../../.claude/skills/obsidian-structure/SKILL.md). Operator doc: [`obsidian-structure.md`](obsidian-structure.md).
 
 ## Not yet built

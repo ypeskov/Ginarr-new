@@ -12,7 +12,7 @@ Sourced by `.claude/scripts/ginarr-bot.sh` at startup with `set -a`, so every va
 
 | Name                | Purpose                                                                       | Required |
 |---------------------|-------------------------------------------------------------------------------|----------|
-| `GINARR_VAULT_ROOT` | Absolute path to the chat-memory vault (data side: `logs/` + `notes/`).       | Yes      |
+| `GINARR_VAULT_ROOT` | Absolute path to the Auto-Wiki vault (data side: `logs/` + `notes/`).       | Yes      |
 
 If `GINARR_VAULT_ROOT` is unset, `log_event.py` prints a message to stderr and exits 0 — the bot runs, but no events are captured.
 

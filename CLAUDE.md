@@ -1,4 +1,4 @@
-# Ginarr — chat-memory
+# Ginarr — Auto-Wiki
 
 ## Ground rules (read first)
 
@@ -33,7 +33,7 @@ No embeddings, no vector DB, no vendor-specific storage.
 
 ## Directory layout
 
-Behavior (scripts, hooks, skills) lives in **this repo** under `.claude/`. Data (logs, notes) lives in a **separate** vault at `$GINARR_VAULT_ROOT` — by default `~/obsidian-vaul/chat-memory/`. The split is deliberate: data is format-portable and long-lived; behavior is runtime-specific and replaceable.
+Behavior (scripts, hooks, skills) lives in **this repo** under `.claude/`. Data (logs, notes) lives in a **separate** vault at `$GINARR_VAULT_ROOT` — by default `~/obsidian-vaul/Auto-Wiki/`. The split is deliberate: data is format-portable and long-lived; behavior is runtime-specific and replaceable.
 
 Current wiring is documented in [`docs/architecture.md`](docs/architecture.md). SPEC.v3's original layout put `skills/`, `agents/`, and `_tools/` inside the vault — that is superseded by the present split (behaviour in `.claude/`, data in the vault); the change is reflected in `docs/architecture.md`, not in any new SPEC revision.
 

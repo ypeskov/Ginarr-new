@@ -1,6 +1,6 @@
 # log_event.py
 
-Write-path hook. Appends one JSONL event per CC hook firing to the chat-memory vault.
+Write-path hook. Appends one JSONL event per CC hook firing to the Auto-Wiki vault.
 
 ## Invocation
 

@@ -27,7 +27,7 @@ To remove it: `crontab -e` and delete the line. To inspect what cron actually ra
 
 ## What it does
 
-1. Sets `HOME`, `PATH`, and `GINARR_VAULT_ROOT` (default `~/obsidian-vaul/chat-memory/`).
+1. Sets `HOME`, `PATH`, and `GINARR_VAULT_ROOT` (default `~/obsidian-vaul/Auto-Wiki/`).
 2. `cd ~/Ginarr` so Claude picks up this repo's `.claude/` skills directory.
 3. Runs `claude -p "/summarize-day"` with a tight allowlist (`Bash`, `Read`, `Write`, `Glob`) and `--permission-mode acceptEdits`.
 4. Appends stdout / stderr to `.claude/scripts/logs/summarize-day.log` along with the exit code.

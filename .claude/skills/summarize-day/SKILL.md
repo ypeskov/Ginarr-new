@@ -1,7 +1,7 @@
 ---
 name: summarize-day
 description: >
-  Generate brief, dry, grep-friendly daily summaries of the chat-memory log.
+  Generate brief, dry, grep-friendly daily summaries of the Auto-Wiki log.
   Use when the user asks to summarise a day's activity, when running headless
   via cron at 00:15 UTC to roll up the previous UTC day, or when the user
   notices missing summary files and asks to backfill. Reads
@@ -20,7 +20,7 @@ A homemade per-day index over the raw JSONL conversation logs. Each summary is a
 
 ## Boundaries
 
-- **Read scope**: `$GINARR_VAULT_ROOT/logs/YYYY/MM/YYYY-MM-DD.jsonl` only. Vault root defaults to `~/obsidian-vaul/chat-memory/`.
+- **Read scope**: `$GINARR_VAULT_ROOT/logs/YYYY/MM/YYYY-MM-DD.jsonl` only. Vault root defaults to `~/obsidian-vaul/Auto-Wiki/`.
 - **Write scope**: `$GINARR_VAULT_ROOT/logs/summaries/YYYY/MM/YYYY-MM-DD.md` only. Never write under `logs/YYYY/MM/` directly.
 - **Day boundary**: UTC. Cron runs at 00:15 UTC, processes everything strictly before today's UTC date.
 - **Idempotent**: never overwrite an existing summary. Backfill = generate missing days only.
@@ -31,7 +31,7 @@ A homemade per-day index over the raw JSONL conversation logs. Each summary is a
 ### 1. Resolve environment
 
 ```bash
-VAULT="${GINARR_VAULT_ROOT:-$HOME/obsidian-vaul/chat-memory}"
+VAULT="${GINARR_VAULT_ROOT:-$HOME/obsidian-vaul/Auto-Wiki}"
 TODAY_UTC=$(date -u +%F)
 NOW_UTC=$(date -u +%FT%TZ)   # use this exact value as `generated_at` for every summary written this run
 ```

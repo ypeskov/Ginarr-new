@@ -1,6 +1,6 @@
 # `obsidian` — full vault access
 
-Read, search, create, and edit notes anywhere in the owner's Obsidian vault at `~/obsidian-vaul/`. Distinct from the Ginarr memory layer, which targets only the `chat-memory/` sub-vault.
+Read, search, create, and edit notes anywhere in the owner's Obsidian vault at `~/obsidian-vaul/`. Distinct from the Ginarr memory layer, which targets only the `Auto-Wiki/` sub-vault.
 
 ## Source
 
@@ -18,7 +18,7 @@ Read, search, create, and edit notes anywhere in the owner's Obsidian vault at `
 | Skill | Scope | Write path |
 |---|---|---|
 | `obsidian` | **Entire** vault — work, BG life, investments, résumé, personal | User decides folder (aided by `obsidian-structure`). |
-| `capture` / `recall` | Only `chat-memory/` sub-vault — long-term conversational memory | Automatic routing by `type:` frontmatter. |
+| `capture` / `recall` | Only `Auto-Wiki/` sub-vault — long-term conversational memory | Automatic routing by `type:` frontmatter. |
 
 Rule of thumb: facts about the owner that the assistant would want to recall in future chats → `capture`. Operational notes, shopping lists, recipes, work docs → `obsidian`.
 

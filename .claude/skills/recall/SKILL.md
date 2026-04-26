@@ -2,7 +2,7 @@
 name: recall
 description: >
   Answer retrospective questions about the owner or past conversations
-  by searching the chat-memory vault before replying. Consult whenever
+  by searching the Auto-Wiki vault before replying. Consult whenever
   the user asks what they said earlier, when something was decided,
   what their plans or preferences were, or asks you to remember a past
   fact. Do not trigger on operational questions (how code works, what

@@ -10,7 +10,7 @@ Every directory under `docs/` carries an `index.md` listing its files and subdir
 
 ### Files
 
-- [architecture.md](architecture.md) — big picture: bot process, chat-memory vault, hook-driven write-path.
+- [architecture.md](architecture.md) — big picture: bot process, Auto-Wiki vault, hook-driven write-path.
 - [configuration.md](configuration.md) — environment variables, `.env` locations, bootstrap recipe.
 - [hooks.md](hooks.md) — Claude Code hooks wired in `settings.json`; assistant-text extraction logic.
 
