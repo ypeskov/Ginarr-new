@@ -105,7 +105,7 @@ For each candidate decide:
 
 - Is this a named, persistent thing worth a page? → entity.
 - Is this a one-off mention of a noun the owner is unlikely to revisit? → skip.
-- Owner's own name? → skip. The whole vault is about him; there is no `wiki/entities/yuriy.md`.
+- Owner's own name? → skip. The owner does have an entity page (`wiki/entities/_owner.md`), but it is owned by the `capture` skill — never write to it from summary-derived runs. Summaries are by definition mostly about the owner; auto-routing every mention there would dump 50+ facts a day onto one page.
 
 When in doubt, lean toward creating — entity pages are cheap to delete; missing entities slow down `recall`.
 
@@ -175,7 +175,7 @@ When the same date is re-ingested with **different** content (because the upstre
 ## Don't
 
 - **Don't fabricate.** If the summary doesn't say something specific, don't put it in the entity page. The skill is a refactor of summary content into entity-shaped layout, not a generative source.
-- **Don't write the owner's own page.** The whole vault is about him.
+- **Don't write to the owner's entity page (`wiki/entities/_owner.md`).** That page is owned by the `capture` skill; summary-derived facts must not land there. The owner can appear inline in other entities' facts but never as the page subject from this skill.
 - **Don't promote one-off mentions** to permanent entities. If a name appears in a single bullet across all of history and looks transient, skip it. A second mention is the natural confirmation.
 - **Don't index `_pending.md` or other `wiki/` scratch.** That's the `review-pending` skill's territory.
 - **Don't rewrite existing facts.** Only append. The conflict protocol handles changes; older facts stay verbatim with their original date anchor.
