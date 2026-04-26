@@ -68,5 +68,6 @@ All cron entries live in the **owner's user crontab** (`crontab -e`), not in `/e
 |-----------------|------------------------------------------------------------------------------|---------------------------------------------------------------|
 | `* * * * *`     | `~/Ginarr/.claude/scripts/ginarr-watchdog.sh`                                | Keep the `ginarr` tmux session and the Telegram plugin alive. |
 | `15 0 * * *`    | `~/Ginarr/.claude/scripts/summarize-day.sh`                                  | Daily roll-up of `logs/<date>.jsonl` into `logs/summaries/`.  |
+| `25 0 * * *`    | `~/Ginarr/.claude/scripts/ingest-and-weave.sh`                               | Weave entities from the new daily summary into `wiki/entities/`. |
 
 OpenClaw and any other sibling repos may add their own entries (e.g. weather, news, calendar digests); those are not owned by this repo.
