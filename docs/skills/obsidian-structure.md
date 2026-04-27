@@ -11,7 +11,7 @@ Companion to [`obsidian`](obsidian.md). Encodes the folder taxonomy and "what go
 
 16 top-level folders covering work (`RingCentral`), life in Bulgaria (`BG`, `BG/Авто`, `BG/Здоровье`), technical notes (`Dev Notes`), personal (`General`), investments (`Investments`), personal projects (`Krokobot`, `Orgfin.run`), creative (`Poems`), career (`Resume`), family (`Slava`), immigration (`US Green Card`), cooking (`Еда`), analytical reports (`Analysis/YYYY-MM-DD/`), and a landing page (`_Dashboard`).
 
-Attachments live inside `_attachments/` sub-folders; analytical reports are dated.
+Attachments live inside `_attachments/` sub-folders **per parent folder**, not in a single root-level `_attachments`. Whatever folder contains a `.md` that links an attachment, that same folder gets its own `_attachments/` next to the `.md`. Analytical reports are dated under `Analysis/YYYY-MM-DD/`.
 
 ## Routing rules (short form)
 
