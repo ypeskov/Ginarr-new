@@ -13,3 +13,4 @@ Everything in `.claude/scripts/`. These are the behavioural building blocks of t
 - [summarize-day.md](summarize-day.md) — cron launcher for the `summarize-day` skill (00:15 UTC daily roll-up).
 - [ingest-and-weave.md](ingest-and-weave.md) — cron launcher for the `ingest-and-weave` skill (00:25 UTC, chained after summarize-day).
 - [lint-wiki-reminder.md](lint-wiki-reminder.md) — weekly Telegram reminder to run `/lint-wiki` manually (Sundays 09:00 UTC). Does NOT run the skill itself.
+- [lint-indexes.md](lint-indexes.md) — cron launcher for the `lint-indexes` skill against the manual side of the Obsidian vault (every 6 hours).

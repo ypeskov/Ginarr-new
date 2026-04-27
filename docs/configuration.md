@@ -61,6 +61,7 @@ All three must align. Missing any one makes `logs/**/*.jsonl` invisible on the M
    - Daily summaries — 00:15 UTC, builds the read-path index: [scripts/summarize-day.md](scripts/summarize-day.md).
    - Entity weaver — 00:25 UTC, weaves entities from each new daily summary into `wiki/entities/`: [scripts/ingest-and-weave.md](scripts/ingest-and-weave.md).
    - Wiki-lint reminder — Sundays 09:00 UTC, sends a Telegram nudge to run `/lint-wiki` manually: [scripts/lint-wiki-reminder.md](scripts/lint-wiki-reminder.md).
+   - Index sync — every 6 hours, regenerates auto-managed sections in every `index.md` across the manual vault: [scripts/lint-indexes.md](scripts/lint-indexes.md).
 
 ## Cron lines installed by this repo
 
@@ -72,5 +73,6 @@ All cron entries live in the **owner's user crontab** (`crontab -e`), not in `/e
 | `15 0 * * *`    | `~/Ginarr/.claude/scripts/summarize-day.sh`                                  | Daily roll-up of `logs/<date>.jsonl` into `logs/summaries/`.  |
 | `25 0 * * *`    | `~/Ginarr/.claude/scripts/ingest-and-weave.sh`                               | Weave entities from the new daily summary into `wiki/entities/`. |
 | `0 9 * * 0`     | `~/Ginarr/.claude/scripts/lint-wiki-reminder.sh`                             | Weekly Telegram nudge: time to run `/lint-wiki` manually.     |
+| `0 */6 * * *`   | `~/Ginarr/.claude/scripts/lint-indexes.sh`                                   | Sync auto-managed sections in every `index.md` across the manual vault. |
 
 OpenClaw and any other sibling repos may add their own entries (e.g. weather, news, calendar digests); those are not owned by this repo.
