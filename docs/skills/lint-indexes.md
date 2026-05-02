@@ -1,8 +1,8 @@
 # `lint-indexes` — per-folder index maintainer
 
-Walks a directory tree and rebuilds every folder's `index.md` from scratch as a pure navigation file: heading + list of files (with one-line descriptions from each file's first H1) + list of subdirectories (with descriptions from their `index.md`'s first H1). The whole `index.md` is regenerated each run; nothing inside it is preserved.
+Walks a directory tree and keeps every folder's `index.md` in sync with the on-disk listing: heading + list of files (each with a one-line description) + list of subdirectories (each with a one-line description). The **listing skeleton** (which entries exist, what order) is rewritten from disk on every run; **descriptions are owner-curated and preserved across runs** — once a description is in `index.md`, the linter never overwrites it. New entries (just-added files / subdirs) get a description derived automatically the first time they appear.
 
-`index.md` is treated as fully linter-owned. Convention notes, cross-links, naming tables, intro paragraphs do **not** belong there — they get clobbered on the next run. Keep that material in separate `.md` files in the same folder; the linter will list it under `## Files` like any other entry.
+Prose intros, convention notes, cross-link tables do **not** belong in `index.md` — only the heading + the two listing sections. Keep prose in a separate file in the same folder (convention: `_about.md`); the linter will list it under `## Files` like any other file.
 
 ## Source
 
@@ -20,30 +20,41 @@ Walks a directory tree and rebuilds every folder's `index.md` from scratch as a 
 | Trigger                                        | Effect                                                                                                                   |
 |------------------------------------------------|--------------------------------------------------------------------------------------------------------------------------|
 | `/lint-indexes`                                | Dry-run on `$GINARR_VAULT_ROOT`. Prints the proposed plan; no writes.                                                    |
-| `/lint-indexes --apply`                        | Apply on `$GINARR_VAULT_ROOT`. Creates / overwrites every `index.md`.                                                    |
+| `/lint-indexes --apply`                        | Apply on `$GINARR_VAULT_ROOT`. Rewrites listings; descriptions for existing entries preserved verbatim.                  |
 | `/lint-indexes <path>`                         | Dry-run on the given path.                                                                                               |
 | `/lint-indexes <path> --apply`                 | Apply on the given path. Outside `$GINARR_VAULT_ROOT` the skill must show the dry-run plan and wait for owner confirmation before writing. |
 | `/lint-indexes <path> --apply --cron`          | Non-interactive scheduled run. Used only by `.claude/scripts/lint-indexes.sh`. The crontab entry IS the standing authorization, so the interactive pause is skipped. |
 
 ## What it writes
 
-Each `index.md` regenerates to exactly this shape:
+Each `index.md` is rewritten to exactly this shape:
 
 ```markdown
 # <directory basename>
 
 ## Files
 
-- [<file>](<file>) — <first H1, or empty>
+- [<file>](<file>) — <description>
 
 ## Subdirectories
 
-- [<sub>/](<sub>/index.md)
+- [<sub>/](<sub>/index.md) — <description>
 ```
 
-Section names are always English (`## Files`, `## Subdirectories`) — matches the de facto convention across this vault. Empty sections are dropped. Entries are sorted alphabetically.
+Section names are always English (`## Files`, `## Subdirectories`). Empty sections are dropped. Entries are sorted alphabetically (case-insensitive, locale-aware — `en_US.UTF-8` collation).
 
-File entries carry a description pulled from the file's own first H1 (within its first 30 lines). If the file has no `# ` H1, the description is omitted — never fabricated. Subdirectory entries get **no** description: their `index.md` H1 is regenerated to the basename, which would be tautological, and there is no stable owner-editable surface for a custom description. Click into the subdir to see what it holds.
+## How descriptions are derived
+
+The linter parses the previous `index.md` and captures the existing description for every bullet line. On rewrite, those descriptions are carried forward verbatim — owner edits to descriptions survive any number of runs.
+
+For **new** entries (in disk listing but not in the previous `index.md`), the linter derives a description automatically:
+
+- **Files:** first `# ` H1 in the first 30 lines (skipped if tautological with the filename) → YAML frontmatter `description:` field → LLM-generated 1-line summary of the file content (≤80 chars). Frontmatter `title:` is ignored when it duplicates the filename.
+- **Subdirs:** if `<sub>/_about.md` exists, its `# H1` (skipped if tautological with the directory name) → its first prose paragraph → first non-list paragraph from `<sub>/index.md` → LLM summary of the subdir's listing.
+
+LLM derivation runs only on cache-miss (new entries). A cron pass over a stable vault produces zero LLM calls; the initial seed of an H1-less vault burns one call per file, then quiesces.
+
+If derivation produces nothing meaningful (binary, empty, content-free), the entry renders without a description (just `- [name](<name>)`) — never fabricated.
 
 ## What it skips
 
@@ -56,8 +67,9 @@ When the walk root is outside `$GINARR_VAULT_ROOT`, the `Auto-Wiki/` subtree is 
 | Symptom                                       | Likely cause                                                                                                |
 |-----------------------------------------------|-------------------------------------------------------------------------------------------------------------|
 | Proposed plan is way too big                  | Root is broader than intended — narrow it: `/lint-indexes wiki/`.                                           |
-| A renamed file shows as removed + added       | Expected — the linter has no rename detection. Description for the new entry comes from its first H1.      |
-| Custom prose disappeared from `index.md`      | Expected — `index.md` is fully linter-owned. Move the prose to a separate `.md` file in the same folder.   |
+| A renamed file shows as removed + added       | Expected — the linter has no rename detection. Description for the new entry is freshly derived.            |
+| Custom prose disappeared from `index.md`      | Expected — only the heading + the two listing sections are kept. Move prose to a sibling `_about.md`.       |
+| Description got rewritten on a cron pass      | Bug — descriptions are supposed to be preserved verbatim. Capture the diff and check if the bullet line was malformed (parser only matches `^- \[name\](target)( — desc)?`). |
 | An entry was force-removed                    | The file no longer exists on disk. Check `git log` or trash.                                                |
 | Owner-private file appeared in an index       | Bug — the file should have been `_pending.md`, under `_tools/`, or under an `attachments/` / `_attachments/` subtree. |
 | Cron wrapper applies without confirmation     | Expected — `--cron` mode treats the crontab entry as the owner's standing authorization for that root.     |
