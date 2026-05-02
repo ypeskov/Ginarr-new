@@ -19,7 +19,7 @@ The owner explicitly invokes `/review` to drain the pending queue. The `capture`
 | Command | Alias (RU) | Effect |
 |---|---|---|
 | `/review` | — | Show the top block + proposed entity + action prompt |
-| `/review save` | `сохрани` / `да` | Promote the top block to `wiki/entities/<slug>.md` (append to existing page or create new), remove from queue, show next |
+| `/review save` | `сохрани` / `да` | Promote the top block to `wiki/entities/<topic>/<slug>.md` (append to existing page or create new at the resolved primary topic), remove from queue, show next |
 | `/review drop` | `удали` / `нет` | Remove the top block without writing a note, show next |
 | `/review skip` | `пропусти` / `потом` | Rotate the top block to the end of the queue, show next |
 | `/review edit` | `правь` | Enter edit sub-flow (change entity / section / body) before saving |
@@ -51,7 +51,7 @@ Legacy blocks written before 2026-04-26 may still carry the old `proposed type:`
 
 ## Save → entity promotion
 
-Promoting a block appends a fact bullet to `wiki/entities/<slug>.md` under the proposed section, with a date anchor (`[[YYYY-MM-DD]]`) linking back to the daily summary. If the entity page does not exist yet, it is created with the standard entity frontmatter (`name`, `aliases`, `type`, `created`, `updated`, `related`). Dedup runs first: if the same fact already lives on the page, the save is a no-op. Contradictions trigger the conflict protocol from the `capture` skill (keep both claims dated, add a `## Conflicts` entry, ask the owner).
+Promoting a block appends a fact bullet to `wiki/entities/<topic>/<slug>.md` (or `_owner.md` for owner-meta) under the proposed section, with a date anchor (`[[YYYY-MM-DD]]`) linking back to the daily summary. If the entity page does not exist yet, it is created with the standard entity frontmatter (`name`, `aliases`, `type`, `topics`, `created`, `updated`, `related`); the primary topic is resolved using the same rules as `capture`. Dedup runs first across all topic folders (recursive search by slug + `aliases:` grep): if the same fact already lives on the page, the save is a no-op. Contradictions trigger the conflict protocol from the `capture` skill (keep both claims dated, add a `## Conflicts` entry, ask the owner).
 
 ## Edit sub-flow
 
@@ -83,7 +83,7 @@ LLM-driven; no self-test harness. Walk manually:
 |---|---|
 | `/review` on an empty queue | `В очереди ничего нет.` (or English match) |
 | `/review` with one block | Body + proposed entity + action prompt |
-| `/review save` | Fact appended (or new page created) at `wiki/entities/<slug>.md`, block removed, next candidate shown (or empty-queue line) |
+| `/review save` | Fact appended (or new page created) at `wiki/entities/<topic>/<slug>.md`, block removed, next candidate shown (or empty-queue line) |
 | `/review drop` | Block removed, no entity write |
 | `/review skip` | Block moved to tail of `_pending.md`, next candidate shown |
 | `/review edit` → change entity → save | Fact appended to the new entity's page, block removed |

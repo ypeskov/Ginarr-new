@@ -9,7 +9,7 @@ description: >
   is in a file, run tests) — those are not retrospective.
 metadata:
   project: Ginarr
-  version: "1.0"
+  version: "1.1"
 ---
 
 # recall
@@ -18,7 +18,7 @@ Read-side memory skill. Complements `capture` and `ingest-and-weave` (the two wr
 
 ## Scope order (authoritative)
 
-1. **`wiki/entities/` first.** Entity pages are curated facts — one page per person / project / place / technology / organization. `_owner.md` is the consolidated owner-meta page (profile, biography, health, values, communication preferences). If an entity page covers the question, quote or summarise it and stop. Do not "double-check" in the logs: entities are the authority, logs are raw material.
+1. **`wiki/entities/` first.** Entity pages are curated facts — one page per person / project / place / technology / organization, organised into topic folders (`dating/`, `work/`, `tech/`, `health/`, `finance/`, `immigration/`, `owner/`, `family/`). Always **search recursively** (`grep -rli` walks subfolders by default; `find` calls must include the entire `wiki/entities/` tree). `_owner.md` lives at the entities root (no topic folder) and is the consolidated owner-meta page (profile, biography, health, values, communication preferences). If an entity page covers the question, quote or summarise it and stop. Do not "double-check" in the logs: entities are the authority, logs are raw material.
 2. **`logs/summaries/` second.** Per-day Markdown summaries built by `summarize-day`. Each is a sub-1KB index for one UTC date with topics, people, decisions. `grep -ril "<keyword>" "$GINARR_VAULT_ROOT/logs/summaries/"` is fast even across years and tells you which day(s) to drill into. If a summary's bullet already answers the question, quote that bullet and cite the summary file — no need to open the JSONL.
 3. **`logs/` JSONL third, only on the days the summaries flagged.** When a summary points to a day but doesn't quote enough detail, open just that one `logs/YYYY/MM/<date>.jsonl` and grep within it. Do not blanket-grep all logs. If summaries returned nothing for the keyword and entities don't cover it, expand the JSONL grep to a bounded date window (see below) — but treat that as a fallback, not the default.
 4. **`_pending.md` on demand.** If the question implies something the owner was recently thinking about but may not have confirmed, also consult `$GINARR_VAULT_ROOT/wiki/_pending.md`. Flag that the match is unconfirmed in the reply.
@@ -49,8 +49,8 @@ If no period is given and notes don't resolve the question, either:
 ## Workflow
 
 1. **Parse the question.** Extract (a) topic / keyword(s), (b) date scope if any.
-2. **Grep entity pages.** `grep -rli "<keyword>" "$GINARR_VAULT_ROOT/wiki/entities/"`. Run variants in parallel: morphological roots (Russian `собак` catches `собаки`/`собаку`), singular/plural, EN↔RU aliases. Also scan `aliases:` frontmatter — entities can match through alternate renderings.
-3. **Match in entities?** → `Read` each hit. If the answer is there, reply and cite the entity path (`— из wiki/entities/_owner.md` or `— из wiki/entities/<slug>.md`). Stop.
+2. **Grep entity pages.** `grep -rli "<keyword>" "$GINARR_VAULT_ROOT/wiki/entities/"` (recursive, walks all topic folders). Run variants in parallel: morphological roots (Russian `собак` catches `собаки`/`собаку`), singular/plural, EN↔RU aliases. Also scan `aliases:` frontmatter — entities can match through alternate renderings: `grep -rh "^aliases:" "$GINARR_VAULT_ROOT/wiki/entities/"`.
+3. **Match in entities?** → `Read` each hit. If the answer is there, reply and cite the entity path including its topic folder (`— из wiki/entities/_owner.md` for root pages, `— из wiki/entities/<topic>/<slug>.md` for topic-folder pages). Stop.
 4. **No match, or note too thin?** → Grep summaries: `grep -ril "<keyword>" "$GINARR_VAULT_ROOT/logs/summaries/"` (parallel for variants). Each hit is a `YYYY-MM-DD.md` for one UTC day. If the bullet inside answers the question on its own, quote it and cite `logs/summaries/YYYY/MM/<date>.md`. Stop.
 5. **Summary points to a day but lacks detail?** → Open just that one `logs/YYYY/MM/<date>.jsonl` and grep inside it: `grep -h "<keyword>" "$GINARR_VAULT_ROOT/logs/YYYY/MM/<date>.jsonl"`. Each line is a JSONL event — parse `ts`, `role`, `content`. Quote the relevant span with its UTC timestamp.
 6. **Summaries returned nothing AND notes are thin?** → Fall back to a bounded JSONL grep over the date window (see below). Use this only when summaries genuinely missed; do not pre-empt step 4 with it.
@@ -83,11 +83,27 @@ Cite as `logs/YYYY/MM/YYYY-MM-DD.jsonl#ts=<ts>` — same pointer shape the `capt
 
 - Short, direct answer **first**.
 - Source citation on a new line:
-  - Note: `— из wiki/entities/<slug>.md`.
+  - Note: `— из wiki/entities/_owner.md` or `— из wiki/entities/<topic>/<slug>.md`.
   - Log: `"..." — 2026-04-23T11:02Z`.
   - Pending (unconfirmed): `— из wiki/_pending.md, ещё не подтверждено`.
 - If nothing found, one line, in the language of the question: "В vault ничего по этой теме нет." / "Nothing in the vault on that."
 - No prefaces ("Я посмотрел в notes и логи…") — cite after answering, not before.
+
+## Topic-scoped recall
+
+When the question is naturally bounded to a topic (e.g. "что я говорил про работу в марте", "напомни про текущий dating-фокус"), narrow the entity grep to the relevant topic folder first:
+
+```bash
+grep -rli "<keyword>" "$GINARR_VAULT_ROOT/wiki/entities/dating/"
+```
+
+For cross-topic membership, also grep the `topics:` frontmatter to find entities that participate in the topic as a secondary tag (e.g. Boo dating app has `topics: [dating, tech]` — included by both `dating` and `tech` queries):
+
+```bash
+grep -rl "^topics:.*dating" "$GINARR_VAULT_ROOT/wiki/entities/"
+```
+
+The `/load-topic <name>` skill handles topic-scoped context loading at session-start scale; `recall` handles single-question lookups.
 
 ## Ginarr vault ≠ your private memory
 

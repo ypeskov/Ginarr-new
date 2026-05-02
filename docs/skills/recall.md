@@ -5,7 +5,7 @@ The skill Claude consults before answering retrospective questions about the own
 ## Source
 
 - Skill: [`.claude/skills/recall/SKILL.md`](../../.claude/skills/recall/SKILL.md) — authoritative behaviour (LLM-facing).
-- Data read: `$GINARR_VAULT_ROOT/wiki/entities/` (curated entity pages — `_owner.md` plus one per person/project/place/technology/organization/event), then `$GINARR_VAULT_ROOT/logs/summaries/` and `logs/YYYY/MM/<date>.jsonl`, plus `wiki/_pending.md` for unconfirmed candidates. Never written. Legacy SPEC.v3 type-folders (`wiki/{user,feedback,projects,reference,decisions}/`) were collapsed into entities/ on 2026-04-26 and archived under `wiki/archive/migration-2026-04-26/`; that path is checked only when the user explicitly asks for the original / pre-migration version of a fact.
+- Data read: `$GINARR_VAULT_ROOT/wiki/entities/` (curated entity pages — `_owner.md` at the root, plus one per person/project/place/technology/organization/event under topic folders `dating/`, `work/`, `tech/`, `health/`, `finance/`, `immigration/`, `owner/`, `family/`), then `$GINARR_VAULT_ROOT/logs/summaries/` and `logs/YYYY/MM/<date>.jsonl`, plus `wiki/_pending.md` for unconfirmed candidates. Never written. All entity reads are recursive — entities can live in any topic folder. Legacy SPEC.v3 type-folders (`wiki/{user,feedback,projects,reference,decisions}/`) were collapsed into entities/ on 2026-04-26 and archived under `wiki/archive/migration-2026-04-26/`; that path is checked only when the user explicitly asks for the original / pre-migration version of a fact.
 
 ## When it fires
 
@@ -31,7 +31,7 @@ If no period is given and entities don't resolve the question, the skill either 
 ## Reply discipline
 
 - Direct answer first, source citation after.
-- Entity citation: `— из wiki/entities/<slug>.md` (e.g. `— из wiki/entities/_owner.md` for owner-meta facts).
+- Entity citation: `— из wiki/entities/<topic>/<slug>.md` (e.g. `— из wiki/entities/_owner.md` for owner-meta facts at root, `— из wiki/entities/dating/eli_badoo.md` for topic-folder pages).
 - Log citation: `"..." — 2026-04-23T11:02Z` (UTC).
 - Pending citation: `— из wiki/_pending.md, ещё не подтверждено`.
 - Nothing found: one line, no preface, in the language of the question.
@@ -43,7 +43,7 @@ If no period is given and entities don't resolve the question, the skill either 
 
 ## Relationship to the other memory skills
 
-- `capture` writes — owner-action driven, routes to `wiki/entities/<slug>.md` (or `_owner.md` for owner-meta).
+- `capture` writes — owner-action driven, routes to `wiki/entities/<topic>/<slug>.md` (or `_owner.md` for owner-meta).
 - `ingest-and-weave` writes — cron-driven, reads daily summaries, weaves entities. Never writes to `_owner.md`.
 - `recall` reads — finds those entity pages when the owner asks retrospective questions.
 - `review` walks `_pending.md` candidates with confirm / drop / edit.
@@ -60,6 +60,7 @@ LLM-driven; no self-test harness. Walk with representative prompts and verify th
 |--------------------------------------------------|-------------------------------------------------------------------------------------------------------------------------------------|
 | "как зовут мою собаку?"                          | Grep `wiki/entities/`; check `_owner.md` § Family or a `dog_*.md` entity page; reply with cite, e.g. `— из wiki/entities/_owner.md`. |
 | "что я вчера вечером говорил про марафон?"        | Grep `logs/summaries/` then `logs/YYYY/MM/YYYY-MM-DD.jsonl` within the UTC window for yesterday evening (Europe/Sofia).             |
-| "что у меня в vault про нейронки?"                | Grep across `wiki/entities/`, list matching files with one-line summaries.                                                          |
+| "что у меня в vault про нейронки?"                | Grep recursively across `wiki/entities/` (all topic folders), list matching files with one-line summaries and their topic-folder paths. |
+| "что у меня сейчас по dating-фронту?"             | Narrow grep to `wiki/entities/dating/` and to entities with `topics:` containing `dating`; summarise each active prospect.          |
 | "когда у меня следующая встреча?"                 | Nothing found → "В vault ничего по этой теме нет." No fabrication.                                                                  |
 | "кажется я недавно думал про смену БД?"           | `_pending.md` has a matching block → quote it, flag as unconfirmed.                                                                 |

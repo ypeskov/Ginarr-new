@@ -14,7 +14,7 @@ description: >
   invokes `/lint-wiki`, or wants an audit of the entity graph.
 metadata:
   project: Ginarr
-  version: "1.0"
+  version: "1.1"
 allowed-tools: Bash, Read, Write, Glob
 ---
 
@@ -36,10 +36,14 @@ This is the **graph-quality half** of the auto-wiki maintenance trio:
 2. **Orphans** — entity pages that no other page references via `[[<slug>]]`. May be intentional (a rarely-mentioned person) or may indicate a missed cross-link.
 3. **Missing cross-references** — when an entity's `name` or any of its `aliases:` appears as plain text in another page's body, but not wrapped as `[[<slug>]]`. Suggests a wikilink should be added (the actual edit is the owner's call, or `cross-link`'s).
 4. **Bidirectional `related:` consistency** — if A's `related:` lists B, but B's `related:` does not list A, flag the mismatch.
-5. **Frontmatter completeness** — required fields present (`name`, `type`, `created`, `updated`); `aliases` includes the slug itself; `type` is from the recognised list (`person`, `project`, `place`, `technology`, `organization`, `event`).
-6. **Stale `updated:`** — pages where `updated:` is more than 30 days older than the latest fact's `[[<date>]]` anchor in `## Facts`.
+5. **Frontmatter completeness** — required fields present (`name`, `type`, `created`, `updated`); `aliases` includes the slug itself; `type` is from the recognised list (`person`, `project`, `place`, `technology`, `organization`, `event`, `scam_persona`).
+6. **`topics:` field validity** — every entity page outside the entities root must have `topics: [...]` with at least one element. The first element (primary topic) must equal the parent folder name (`wiki/entities/dating/eli_badoo.md` → `topics[0] == 'dating'`). Mismatch = either file in wrong folder, or `topics:` out of sync. Pages at the entities root (`_owner.md`, `_about.md`) are exempt from `topics:` requirement.
+7. **Topic taxonomy** — primary topic in `topics:` must be one of the recognised topic folders (`dating`, `work`, `tech`, `health`, `finance`, `immigration`, `owner`, `family`). Secondary topics may be any of the recognised set; unknown topic names are flagged.
+8. **Stale `updated:`** — pages where `updated:` is more than 30 days older than the latest fact's `[[<date>]]` anchor in `## Facts`.
 
 The owner's `_owner.md` page does **not** have a flat `## Facts` section by design (it uses topical headers); skip the "stale updated vs latest fact" check for that page.
+
+The `_about.md` files inside topic folders are folder-metadata, not entities — exclude them from the entity audit (they have no frontmatter and no `topics:` field by design).
 
 ## What it doesn't do
 
@@ -82,6 +86,12 @@ issue_count: <M>
 - [[<slug>]] missing `<field>`
 - [[<slug>]] `type` is `<unknown>`, not in recognised list
 
+## Topic mismatches
+
+- [[<slug>]] lives in `<folder>/`, but `topics[0]` is `<other-topic>`
+- [[<slug>]] missing `topics:` field
+- [[<slug>]] `topics:` contains `<unknown>` not in taxonomy
+
 ## Stale updated:
 
 - [[<slug>]] updated: <date>, latest fact: [[<later-date>]]
@@ -89,7 +99,7 @@ issue_count: <M>
 ## Tally
 
 - Entities scanned: N
-- Issues by category: contradictions=A, orphans=B, missing_xrefs=C, related_mismatch=D, frontmatter=E, stale=F
+- Issues by category: contradictions=A, orphans=B, missing_xrefs=C, related_mismatch=D, frontmatter=E, topic_mismatch=F, stale=G
 ```
 
 Empty sections are dropped. The chat reply summarises in 5-10 lines and points to the report file.
@@ -97,8 +107,8 @@ Empty sections are dropped. The chat reply summarises in 5-10 lines and points t
 ## Workflow
 
 1. **Resolve scope.** Always `$GINARR_VAULT_ROOT/wiki/entities/`. No args.
-2. **List pages.** `find $GINARR_VAULT_ROOT/wiki/entities -maxdepth 2 -name '*.md' -not -name 'index.md'`. Exclude `_pending.md` (it lives at `wiki/`, not under entities, but be defensive).
-3. **Parse each page.** Read frontmatter (`name`, `aliases`, `type`, `created`, `updated`, `related`). Read body. Extract `[[<slug>]]` references. Detect `## Conflicts` section.
+2. **List pages.** `find $GINARR_VAULT_ROOT/wiki/entities -maxdepth 2 -name '*.md' -not -name 'index.md' -not -name '_about.md'`. The `-maxdepth 2` covers root-level pages (`_owner.md`) plus one level of topic folder. Exclude `_pending.md` (lives at `wiki/`, not under entities, but be defensive). Exclude `_about.md` files (folder metadata, not entities).
+3. **Parse each page.** Read frontmatter (`name`, `aliases`, `type`, `topics`, `created`, `updated`, `related`). Note the page's parent folder (= primary topic, except for root-level pages). Read body. Extract `[[<slug>]]` references. Detect `## Conflicts` section.
 4. **Build the link graph.** For each page A, record outbound links (slugs A references) and aggregate inbound (slugs A is referenced by).
 5. **Run checks.**
    - Contradictions: pages with non-empty `## Conflicts`.
@@ -106,6 +116,7 @@ Empty sections are dropped. The chat reply summarises in 5-10 lines and points t
    - Missing xrefs: for each page A and each other entity B, scan A's body for B's `name` or any alias as a whole-word substring. If found and not already inside `[[...]]`, flag.
    - Related mismatch: bidirectional check on `related:`.
    - Frontmatter: required fields, type validity, alias-includes-slug.
+   - Topics: presence of `topics:` field for non-root pages; `topics[0]` matches parent folder; all topic names are in recognised taxonomy.
    - Stale: parse all `[[YYYY-MM-DD]]` anchors in `## Facts`, compare to `updated:`.
 6. **Compose the report** in the format above.
 7. **Write `wiki/_health/<YYYY-MM-DD>.md`.** Create the dir if missing. Overwrite if the file already exists for today (rerunning on the same day should refresh, not pile up).

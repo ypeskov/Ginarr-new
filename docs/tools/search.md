@@ -35,7 +35,7 @@ Positional `<query>` is a case-insensitive substring (escaped before regex compi
 
 ```
 wiki (3 hits):
-  wiki/entities/dog_rex.md:5: description: user's dog — a border collie, 4 years old
+  wiki/entities/family/dog_rex.md:5: description: user's dog — a border collie, 4 years old
 
 logs (2 hits):
   logs/2026/04/2026-04-23.jsonl 2026-04-23T14:32:01Z [user]: what was the …
@@ -45,7 +45,7 @@ logs (2 hits):
 
 ```json
 {
-  "wiki": [{"path": "wiki/entities/dog_rex.md", "line": 5, "text": "…"}],
+  "wiki": [{"path": "wiki/entities/family/dog_rex.md", "line": 5, "text": "…"}],
   "logs":  [{"path": "logs/…", "ts": "2026-04-23T14:32:01Z", "role": "user", "content": "…"}]
 }
 ```

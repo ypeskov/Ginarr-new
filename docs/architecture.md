@@ -26,16 +26,28 @@ Rationale for the split: data is format-portable, behavior is runtime-specific; 
 ```
 $GINARR_VAULT_ROOT/
 ├── logs/
-│   ├── YYYY/MM/YYYY-MM-DD.jsonl   ← raw event log (one line per turn)
+│   ├── YYYY/MM/YYYY-MM-DD.jsonl    ← raw event log (one line per turn)
 │   └── summaries/YYYY/MM/<date>.md ← daily roll-ups (built nightly)
 └── wiki/
     ├── entities/
-    │   ├── _owner.md               ← consolidated owner-meta page
-    │   └── <slug>.md               ← one page per person/project/place/tech/org/event
-    ├── _pending.md                 ← low-confidence captures awaiting /review
-    ├── _health/<date>.md           ← lint-wiki audit reports
+    │   ├── _owner.md                ← consolidated owner-meta page (root)
+    │   ├── _about.md / index.md     ← folder metadata
+    │   ├── dating/<slug>.md         ← per-topic entity pages
+    │   ├── work/<slug>.md
+    │   ├── tech/<slug>.md
+    │   ├── health/<slug>.md
+    │   ├── finance/<slug>.md
+    │   ├── immigration/<slug>.md
+    │   ├── owner/<slug>.md
+    │   └── family/<slug>.md
+    ├── topics/
+    │   └── <topic>.md               ← per-topic manifests for /load-topic
+    ├── _pending.md                  ← low-confidence captures awaiting /review
+    ├── _health/<date>.md            ← lint-wiki audit reports
     └── archive/migration-2026-04-26/ ← pre-entity-model originals (read-only)
 ```
+
+Each entity page carries a `topics: [<primary>, <secondary>, ...]` frontmatter field. The first element dictates the folder; secondary entries enable cross-cutting membership (e.g. `boo.md` lives in `dating/` but is tagged `[dating, tech]`). The flat layout in use until 2026-05-02 was reorganised into topic folders the same day; entity pages, the `_owner.md` root page, and `_about.md` / `index.md` files are the only contents at the entities root.
 
 Idea inspiration: Karpathy's [LLM-managed wiki gist](https://gist.github.com/karpathy/442a6bf555914893e9891c11519de94f). The `logs/` slot is "raw chat", `logs/summaries/` is the daily index, `wiki/entities/` is the curated knowledge layer.
 
@@ -57,12 +69,12 @@ See [hooks.md](hooks.md) for the extraction details and [scripts/log_event.md](s
 
 The hook-driven log is raw material. The curated layer — `wiki/entities/` — is built by two skills that share the same write target:
 
-- [`capture`](skills/capture.md) — owner-action-driven. Triages an in-conversation statement and either writes directly to `wiki/entities/<slug>.md` (or `_owner.md` for owner-meta), or queues it in `wiki/_pending.md` for `/review`. Fires whenever the owner states a fact, preference, or decision.
-- [`ingest-and-weave`](skills/ingest-and-weave.md) — cron-driven. Reads each new daily summary (built by `summarize-day`) and weaves the mentioned entities into the same `wiki/entities/<slug>.md` pages. Never writes to `_owner.md` (that page is owner-action territory). Idempotent: facts already on a page are not duplicated; contradictions get a `## Conflicts` marker.
+- [`capture`](skills/capture.md) — owner-action-driven. Triages an in-conversation statement and either writes directly to `wiki/entities/<topic>/<slug>.md` (or `_owner.md` for owner-meta), or queues it in `wiki/_pending.md` for `/review`. Fires whenever the owner states a fact, preference, or decision. Resolves the primary topic when creating a new entity (asks the owner if ambiguous).
+- [`ingest-and-weave`](skills/ingest-and-weave.md) — cron-driven. Reads each new daily summary (built by `summarize-day`) and weaves the mentioned entities into `wiki/entities/<topic>/<slug>.md` pages. Never writes to `_owner.md` (that page is owner-action territory). Idempotent: facts already on a page are not duplicated; contradictions get a `## Conflicts` marker. Resolves primary topic via co-mention tally + type defaults; logs uncertainty for owner review when no signal dominates.
 
 Both skills append, never overwrite. Conflicts surface as a marker plus a question to the owner; resolved through `/review` or by direct edit in Obsidian.
 
-The previous SPEC.v3 layout used per-type folders (`wiki/{decisions,feedback,projects,reference,user}/`). On 2026-04-26 (auto-wiki roadmap step 3.4) those collapsed into the entity-page model and the originals moved to `wiki/archive/migration-2026-04-26/`.
+The previous SPEC.v3 layout used per-type folders (`wiki/{decisions,feedback,projects,reference,user}/`). On 2026-04-26 (auto-wiki roadmap step 3.4) those collapsed into the entity-page model and the originals moved to `wiki/archive/migration-2026-04-26/`. On 2026-05-02 the flat entity layout was reorganised into topic folders (`dating/`, `work/`, `tech/`, `health/`, `finance/`, `immigration/`, `owner/`, `family/`) with a mandatory `topics:` frontmatter field for cross-cutting membership.
 
 ## Read-path index
 
@@ -87,12 +99,22 @@ The `summaries/` subtree is parallel to the per-month log folders, never nested 
 
 The chain is intentionally sequential (`summarize-day` → `ingest-and-weave`) but uncoupled (separate cron lines, not a single wrapper) so a failure in one does not block the other.
 
+## Topic system (working memory)
+
+A separate layer on top of the entity model that solves "load this topic's full state into the current session" without coupling to runtime-specific session mechanisms.
+
+- **Manifests** at `wiki/topics/<name>.md` curate the entity pages and main-vault paths relevant to each topic, plus topic-specific notes for the assistant.
+- [`load-topic`](skills/load-topic.md) — reads a manifest, walks `wiki/entities/<name>/`, finds cross-tagged entities (`topics:` includes `<name>`), reads listed main-vault paths, prints a structured ready-state. Auto-discovery fallback when no manifest exists. Read-only.
+- [`edit-topic`](skills/edit-topic.md) — list / show / create / add / remove / rename operations on `wiki/topics/<name>.md`. Validates referenced paths.
+
+Per-topic context loading lives at the **skill** layer, not at the runtime-session layer — vendor-neutral by design (works the same on Claude Code, Junie, OpenCode + oh-my-opencode). New session + `/load-topic <name>` is the canonical pattern; no UUID maps, no `claude --resume` wrappers.
+
 ## Auxiliary skills
 
 Not part of the write/read path itself, but maintain navigability:
 
 - [`lint-indexes`](skills/lint-indexes.md) — ensures every directory in the vault (and optionally the main Obsidian vault) has an `index.md` listing its contents. Read-only by default; `--apply` writes.
-- [`lint-wiki`](skills/lint-wiki.md) — health check on `wiki/entities/`: contradictions, orphans, missing cross-references, frontmatter consistency. Writes a report to `wiki/_health/<date>.md`. Manual; the cron above only nudges.
+- [`lint-wiki`](skills/lint-wiki.md) — health check on `wiki/entities/`: contradictions, orphans, missing cross-references, `topics:` field validity, frontmatter consistency. Writes a report to `wiki/_health/<date>.md`. Manual; the cron above only nudges.
 - [`cross-link`](skills/cross-link.md) — proposes `[[wikilink]]` insertions between the main Obsidian vault and `wiki/entities/`. Manual, dry-run by default; `--apply` writes only on owner confirmation.
 
 ## What is NOT here yet
