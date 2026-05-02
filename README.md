@@ -20,16 +20,21 @@ The bot's behaviour and the memory it produces live in **separate** directories 
 ```
 $GINARR_VAULT_ROOT/
 ├── logs/
-│   ├── YYYY/MM/YYYY-MM-DD.jsonl   ← raw event log (one line per turn)
+│   ├── YYYY/MM/YYYY-MM-DD.jsonl    ← raw event log (one line per turn)
 │   └── summaries/YYYY/MM/<date>.md ← daily roll-ups (built nightly)
 └── wiki/
     ├── entities/
     │   ├── _owner.md               ← consolidated owner-meta page
-    │   └── <slug>.md               ← one page per person/project/place/tech/org/event
+    │   └── <topic>/<slug>.md       ← one page per person/project/place/tech/org/event,
+    │                                 grouped under eight topic folders (dating, work,
+    │                                 tech, health, finance, immigration, owner, family)
+    ├── topics/<name>.md            ← per-topic manifests for /load-topic and /edit-topic
     ├── _pending.md                 ← low-confidence captures awaiting /review
     ├── _health/<date>.md           ← lint-wiki audit reports
     └── archive/migration-2026-04-26/ ← pre-entity-model originals (read-only)
 ```
+
+A `topics:` frontmatter field on every entity (`topics: [primary, ...secondary]`) lets a single page surface under multiple topics without duplication; the first element dictates the folder.
 
 Inspired by Karpathy's [LLM-managed wiki gist](https://gist.github.com/karpathy/442a6bf555914893e9891c11519de94f). `logs/` is raw chat, `logs/summaries/` is the daily index, `wiki/entities/` is the curated knowledge layer.
 
@@ -39,12 +44,12 @@ Inspired by Karpathy's [LLM-managed wiki gist](https://gist.github.com/karpathy/
 
 **Write path B — entity pages** (skill-driven). The raw log is the firehose; the curated layer is `wiki/entities/`, built by two skills sharing the same target:
 
-- `capture` — owner-action-driven. Triages an in-conversation statement and either writes directly to an entity page, or queues it in `_pending.md` for `/review`.
-- `ingest-and-weave` — cron-driven. Reads each new daily summary and weaves the mentioned entities into the same `wiki/entities/<slug>.md` pages.
+- `capture` — owner-action-driven. Triages an in-conversation statement and either writes directly to an entity page (`wiki/entities/<topic>/<slug>.md`), or queues it in `_pending.md` for `/review`.
+- `ingest-and-weave` — cron-driven. Reads each new daily summary and weaves the mentioned entities into the same per-topic entity pages.
 
 Both append rather than overwrite; contradictions surface as a `## Conflicts` marker rather than silently mutating.
 
-**Read path.** The `recall` skill answers retrospective questions by greping in this order: `wiki/entities/` (curated), `logs/summaries/` (daily index), then a specific day's raw `logs/<date>.jsonl` only on the days the summaries flag.
+**Read path.** The `recall` skill answers retrospective questions by greping in this order: `wiki/entities/` (curated, recursive across topic folders), `logs/summaries/` (daily index), then a specific day's raw `logs/<date>.jsonl` only on the days the summaries flag. For topic-scoped sessions, `/load-topic <name>` reads a manifest plus the topic folder up-front, so the rest of the conversation runs with that topic's full state in context.
 
 ## Daily cron chain
 
@@ -60,7 +65,13 @@ The chain is sequential by design (`summarize-day` → `ingest-and-weave`) but u
 
 ## Skills
 
-A dozen skills sit on top of the vault — `capture`, `recall`, `summarize-day`, `ingest-and-weave`, `lint-wiki`, `lint-indexes`, `cross-link`, `review-pending`, plus convenience utilities (`/email-digest`, `/news-digest`, `/weather`, `/calendar-digest`, `/obsidian`). Each lives under `.claude/skills/<name>/SKILL.md`.
+Skills sit on top of the vault, in three buckets:
+
+- **Memory layer** — `capture`, `recall`, `summarize-day`, `ingest-and-weave`, `lint-wiki`, `lint-indexes`, `cross-link`, `review-pending`, `load-topic`, `edit-topic`.
+- **Repo workflow** — `save-to-repo` (commit / push), `create-skill` (scaffold), `obsidian-structure` (vault routing rules).
+- **Daily drivers** — `/email-digest`, `/news-digest`, `/weather`, `/calendar-digest`, `/obsidian`.
+
+Plus three slash commands wired through `.claude/commands/`: `/nolog` (pause the write log), `/redact` (extend the denylist), `/review` (walk `_pending.md`). Each skill lives under `.claude/skills/<name>/SKILL.md` — that's the authoritative source.
 
 See [`docs/skills/index.md`](docs/skills/index.md) for the full list with one-line descriptions.
 
