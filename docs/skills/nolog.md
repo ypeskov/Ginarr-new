@@ -1,6 +1,6 @@
 # `/nolog` — Layer 4 runtime pause
 
-Slash command that pauses the Auto-Wiki write-path for a conversation window. Implements Layer 4 of SPEC.v3's secret-protection stack: when regex redaction can't help and you just need to keep something out of the log entirely.
+Slash command that pauses the Auto-Wiki write-path for a conversation window. Implements Layer 4 of the secret-protection stack: when regex redaction can't help and you just need to keep something out of the log entirely.
 
 ## Source
 
@@ -38,7 +38,7 @@ On every `user` / `assistant` hook firing, `log_event.py` compares the two:
 ## Caveats
 
 - The flag is process-wide, file-based. Any agent with write access to `.claude/channels/` can set or clear it — that's fine for a single-owner bot.
-- Per SPEC: "Content inside the window is not persisted." That includes the assistant's own confirmation to `/nolog on` — it lands after the transition boundary and gets skipped. The log will show the user's `/nolog on` prompt, then `log_paused`, then silence until the next `log_resumed`.
+- Content inside the pause window is not persisted. That includes the assistant's own confirmation to `/nolog on` — it lands after the transition boundary and gets skipped. The log will show the user's `/nolog on` prompt, then `log_paused`, then silence until the next `log_resumed`.
 - `log_event.py` never fails if the channels dir doesn't exist — it's created lazily on the first `off→on` transition.
 
 ## Related

@@ -102,7 +102,7 @@ Hard-coded skip list (not descended into, not indexed, not written to):
 
 - `.git/`, `.obsidian/`, `node_modules/`, `__pycache__/`, `.venv/`, `dist/`, `build/`
 - `_pending.md` — capture skill's pending-review queue.
-- `_tools/` — legacy vault-side tools directory (per SPEC.v3, now migrated to the repo).
+- `_tools/` — legacy vault-side tools directory, now migrated to the repo.
 - `_attachments/` and `attachments/` subtrees — binary blobs, not navigable.
 
 **The `Auto-Wiki/` subtree is also skipped when `<root>` is outside it.** Auto-Wiki manages itself via `ingest-and-weave`. When walking the broader vault (e.g. `~/obsidian-vaul/`), descend into everything except `Auto-Wiki/`. When `<root>` is `Auto-Wiki/` itself (or under it), this skip doesn't apply — direct invocation on Auto-Wiki still works.

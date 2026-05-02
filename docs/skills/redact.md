@@ -1,6 +1,6 @@
 # `/redact` — Layer 3 owner-marked denylist
 
-Slash command for marking a specific *value* as secret. All subsequent occurrences of that string in `user` / `assistant` log events are replaced with `[REDACTED:user-marked]`. Implements Layer 3 of SPEC.v3's secret-protection stack — the surgical counterpart to `/nolog`'s pause.
+Slash command for marking a specific *value* as secret. All subsequent occurrences of that string in `user` / `assistant` log events are replaced with `[REDACTED:user-marked]`. Implements Layer 3 of the secret-protection stack — the surgical counterpart to `/nolog`'s pause.
 
 ## Source
 
@@ -24,7 +24,7 @@ Slash command for marking a specific *value* as secret. All subsequent occurrenc
 
 ## Lifecycle
 
-Per SPEC: Layer 3 "resets on restart." `log_event.py._reset_channels_on_start()` deletes `.redact-list` right after writing `bot_started` on every `SessionStart` hook. A fresh process starts with an empty Layer 3 denylist.
+Layer 3 resets on restart by design. `log_event.py._reset_channels_on_start()` deletes `.redact-list` right after writing `bot_started` on every `SessionStart` hook. A fresh process starts with an empty Layer 3 denylist.
 
 If you need a durable denylist across restarts, that is out of scope for Layer 3 by design — the intended flow is to re-issue `/redact` for still-sensitive values as needed.
 
@@ -35,7 +35,7 @@ The string `/redact Galina` is itself a user prompt, and `UserPromptSubmit` fire
 Two mitigations exist:
 
 1. The slash command is told not to echo the value back in its reply, so the assistant event does not re-leak it.
-2. SPEC.v3 also permits an inline `<secret>value</secret>` tag syntax: any text wrapped in that tag would be scrubbed in-place before the write. That inline form is **not yet implemented** in `redactor.py` — it is tracked as a follow-up, not Phase 2.2 scope.
+2. An inline `<secret>value</secret>` tag syntax is on the backlog: any text wrapped in that tag would be scrubbed in-place before the write. That inline form is **not yet implemented** in `redactor.py` — tracked as a follow-up, not part of current scope.
 
 For genuinely critical values, combine `/nolog on` → share → `/redact value` → `/nolog off`. The pause window hides both the secret itself and the `/redact` that marks it.
 

@@ -68,11 +68,11 @@ Create a launcher at `.claude/scripts/<name>.sh` that calls the skill via `claud
 export HOME=/home/krokobot
 export PATH="$HOME/.bun/bin:$HOME/.local/bin:/home/linuxbrew/.linuxbrew/bin:/usr/local/bin:/usr/bin:/bin:$PATH"
 
-LOG="$HOME/OpenClaw/.claude/scripts/logs/<name>.log"
+LOG="$HOME/Ginarr/.claude/scripts/logs/<name>.log"
 mkdir -p "$(dirname "$LOG")"
 
 echo "=== $(date -u) ===" >> "$LOG"
-cd "$HOME/OpenClaw"
+cd "$HOME/Ginarr"
 claude -p "/<name>" \
   --allowedTools '<required tools>' \
   --permission-mode acceptEdits \

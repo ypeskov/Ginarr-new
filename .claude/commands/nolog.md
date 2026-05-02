@@ -4,7 +4,7 @@ argument-hint: on | off
 allowed-tools: Bash(mkdir:*), Bash(touch:*), Bash(rm:*), Bash(test:*), Bash(ls:*)
 ---
 
-Toggle Ginarr's write-path pause (SPEC.v3 §"Layer 4").
+Toggle Ginarr's write-path pause (Layer 4 of the secret-protection stack).
 
 Argument: `$ARGUMENTS`
 

@@ -11,7 +11,7 @@ The bot's behaviour and the memory it produces live in **separate** directories 
 | Path                         | Purpose                                                  | Lifecycle                                                  |
 |------------------------------|----------------------------------------------------------|------------------------------------------------------------|
 | `~/Ginarr/` (this repo)      | Behaviour: scripts, hooks, skills, configuration.        | Replaceable. Migrate to Junie or OpenCode by rewiring.    |
-| `~/obsidian-vaul/Auto-Wiki/` | Data: logs, notes. Portable Markdown + JSONL.            | Must survive years and runtime migrations.                |
+| `~/obsidian-vaul/Auto-Wiki/` | Data: logs, wiki. Portable Markdown + JSONL.             | Must survive years and runtime migrations.                |
 
 `GINARR_VAULT_ROOT` in `.claude/.env` (gitignored) points the bot at its vault. See [`docs/configuration.md`](docs/configuration.md) for the full bootstrap.
 

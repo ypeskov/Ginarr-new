@@ -17,7 +17,7 @@ metadata:
 
 Single-owner queue processor for `$GINARR_VAULT_ROOT/wiki/_pending.md`. Low-confidence captures from the `capture` skill land there as blocks. This skill lets the owner process them one-by-one — promote to a real entity-page fact, drop, skip, or edit — via the `/review` slash command (the primary trigger) or bare action words after a candidate has been presented.
 
-Aligned with the entity-page model (post-2026-04-26 migration). Promotion appends a fact bullet to `$GINARR_VAULT_ROOT/wiki/entities/<slug>.md` under the proposed section, never to a type-folder.
+Aligned with the entity-page model (post-2026-04-26 migration). Promotion appends a fact bullet to `$GINARR_VAULT_ROOT/wiki/entities/<topic>/<slug>.md` under the proposed section, never to a type-folder.
 
 ## File layout
 
@@ -41,7 +41,7 @@ Blocks are delimited by `## ` at column 0. The template header is everything bef
 2. **Empty queue?** → one line, no reaction: `В очереди ничего нет.` / `Queue is empty.` (match language). Stop.
 3. **Top block?** → Present in the reply:
    - Candidate body (truncate to ~500 chars, append `…` and `(полный блок в _pending.md)` if longer).
-   - `Предложенный entity: wiki/entities/<slug>.md § <section>` (or English equivalent).
+   - `Предложенный entity: wiki/entities/<topic>/<slug>.md § <section>` (or English equivalent).
    - Inline prompt: `/review save | drop | skip | edit` (or: "ответь save/drop/skip/edit").
 4. **On next action** (either `/review <action>` or a bare action word in a Telegram reply after the prompt):
    - `save` / `сохрани` / `да` → promote (below), remove the block, then present the next candidate.
@@ -61,12 +61,12 @@ When the owner says save on a top block:
    - `source` = from `- source:` line.
    - `body` = everything after the bullet list, trimmed. This is the candidate fact text.
    - `date_anchor` = the date portion of the `- source:` line (`YYYY-MM-DD`). Falls back to today's UTC date if the source line is missing.
-2. **Resolve the entity page.** Path is `$GINARR_VAULT_ROOT/wiki/entities/<slug>.md`.
+2. **Resolve the entity page.** Path is `$GINARR_VAULT_ROOT/wiki/entities/<topic>/<slug>.md`.
    - If the file exists → Read it.
-   - If not, also scan every existing entity's `aliases:` frontmatter (`grep -l "aliases:" wiki/entities/`) for a match — the same person can appear under multiple renderings. If an alias matches, switch the target to that slug.
-   - Still no match → create the page using the entity-page format (below).
+   - If not, also scan every existing entity's `aliases:` frontmatter (`grep -rl "aliases:" wiki/entities/`) recursively across topic folders for a match — the same person can appear under multiple renderings. If an alias matches, switch the target to that slug (preserving its existing topic folder).
+   - Still no match → resolve the primary topic for the new entity (same heuristic as `capture` / `ingest-and-weave`: ask the owner if ambiguous), then create the page under `wiki/entities/<topic>/<slug>.md` using the entity-page format (below).
 3. **Dedup.** Search the target page for an existing fact bullet that matches the candidate body (case-insensitive substring on the body text). If a match is found:
-   - **Identical fact** → no-op write. Drop the pending block, reply `Skipped: already on wiki/entities/<slug>.md`.
+   - **Identical fact** → no-op write. Drop the pending block, reply `Skipped: already on wiki/entities/<topic>/<slug>.md`.
    - **Contradictory fact** → Conflict protocol (below). Do **not** remove the pending block until the conflict is resolved.
 4. **Append the fact.** One-line declarative bullet anchored by `[[<date>]]`:
    ```
@@ -76,7 +76,7 @@ When the owner says save on a top block:
 5. **Bump frontmatter.** Update `updated:` to today's UTC date.
 6. **Remove the block from `_pending.md`.** Read → rewrite as `header + "\n\n" + join(remaining_blocks, "\n\n")` → Write. Never overwrite the header.
 7. **Feedback:**
-   - Telegram: 💾 reaction on the owner's `save` message (fallback 🧠 → 👌), then one short reply `Saved to wiki/entities/<slug>.md § <section>`.
+   - Telegram: 💾 reaction on the owner's `save` message (fallback 🧠 → 👌), then one short reply `Saved to wiki/entities/<topic>/<slug>.md § <section>`.
    - Terminal (no `<channel>` tag): same short line, no reaction.
 
 ### Entity-page format for new pages
@@ -88,6 +88,7 @@ When the proposed entity has no existing page, create the file using the same fo
 name: <canonical name, in original script>
 aliases: [<alt name>, <transliteration>, <nickname>]
 type: <person|project|place|technology|organization|event>
+topics: [<primary-topic>, <...secondary-topics>]
 created: <today UTC date>
 updated: <today UTC date>
 related: []
@@ -151,19 +152,19 @@ Aligned with the `capture` skill's protocol:
 
 ## Write boundary
 
-`review-pending` writes the vault — both `wiki/entities/<slug>.md` (new or appended) and `wiki/_pending.md` (block removal, rotation). Unlike `recall`, it is not read-only. All writes happen at the explicit direction of the owner; never auto-merge on ambiguity.
+`review-pending` writes the vault — both `wiki/entities/<topic>/<slug>.md` (new or appended) and `wiki/_pending.md` (block removal, rotation). Unlike `recall`, it is not read-only. All writes happen at the explicit direction of the owner; never auto-merge on ambiguity.
 
 ## Telegram reply shape
 
 | Action | Reaction (best-effort) | Text reply |
 |---|---|---|
 | Candidate prompt | — | body + proposed entity § section + action prompt |
-| Save | 💾 (→ 🧠 → 👌) | `Saved to wiki/entities/<slug>.md § <section>` |
-| Save (already present) | 👌 | `Skipped: already on wiki/entities/<slug>.md` |
+| Save | 💾 (→ 🧠 → 👌) | `Saved to wiki/entities/<topic>/<slug>.md § <section>` |
+| Save (already present) | 👌 | `Skipped: already on wiki/entities/<topic>/<slug>.md` |
 | Drop | 👌 | — |
 | Skip | 👌 | — |
 | Edit (preview) | — | updated fields + confirm prompt |
-| Edit (applied) | 💾 | `Saved to wiki/entities/<slug>.md § <section>` |
+| Edit (applied) | 💾 | `Saved to wiki/entities/<topic>/<slug>.md § <section>` |
 | Conflict | — | both claims + question, block left in queue |
 | Empty queue | — | one line |
 

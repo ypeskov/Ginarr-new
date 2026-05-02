@@ -4,7 +4,7 @@ argument-hint: (empty) | save | drop | skip | edit
 allowed-tools: Read, Write, Edit, Bash(grep:*), Bash(ls:*), Bash(mkdir:*), Bash(test:*), mcp__plugin_telegram_telegram__react, mcp__plugin_telegram_telegram__reply
 ---
 
-Trigger for the `review-pending` skill (SPEC.v3 §"Review flow").
+Trigger for the `review-pending` skill.
 
 Action: `$ARGUMENTS` (case-insensitive, accepts Russian or English).
 

@@ -4,7 +4,7 @@ argument-hint: <value> | (empty to report list size)
 allowed-tools: Read, Write, Bash(mkdir:*), Bash(wc:*), Bash(test:*), Bash(grep:*)
 ---
 
-Append one owner-marked value to the Layer 3 denylist at `.claude/channels/.redact-list` (SPEC.v3 §"Layer 3").
+Append one owner-marked value to the Layer 3 denylist at `.claude/channels/.redact-list` (Layer 3 of the secret-protection stack).
 
 Argument: `$ARGUMENTS`
 

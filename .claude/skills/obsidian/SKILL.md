@@ -25,7 +25,7 @@ metadata:
 | `Dev Notes` | Technical notes, commands, configs |
 | `General` | Personal — contacts, accounts, misc |
 | `Investments` | Portfolio, tickers, plans |
-| `OpenCLaw` | Bot-related notes |
+| `Krokobot` | Bot-related notes |
 | `Orgfin.run` | Business project notes |
 | `Poems` | Poetry |
 | `Resume` | CV sections and output |

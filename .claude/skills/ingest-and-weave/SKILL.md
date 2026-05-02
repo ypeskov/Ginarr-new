@@ -12,7 +12,7 @@ description: >
   claims get a conflict marker rather than silently overwriting. Use
   when the user asks to "обнови entity-страницы", "пройдись ingest-and-
   weave", or invokes `/ingest-and-weave [<date>|<range>|<entity>|now]`.
-  Also runs from cron at 00:15 UTC chained after `summarize-day`.
+  Also runs from cron at 00:25 UTC chained after `summarize-day`.
 metadata:
   project: Ginarr
   version: "2.0"

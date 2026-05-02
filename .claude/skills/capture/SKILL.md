@@ -198,5 +198,5 @@ Never echo the saved value in the visible reply — the reply itself lands in th
 
 ## Migration history
 
-- **2026-04-26** — SPEC.v3 per-type folders (`wiki/{decisions,feedback,projects,reference,user}/`) collapsed into the entity-page model under `wiki/entities/`; old folders archived under `wiki/archive/migration-2026-04-26/`. The capture skill was rewritten to route directly to `wiki/entities/<slug>.md`.
+- **2026-04-26** — per-type folders (`wiki/{decisions,feedback,projects,reference,user}/`) collapsed into the entity-page model under `wiki/entities/`; old folders archived under `wiki/archive/migration-2026-04-26/`. The capture skill was rewritten to route directly to `wiki/entities/<slug>.md`.
 - **2026-05-02** — flat entity layout split into topic folders (`dating/`, `work/`, `tech/`, `health/`, `finance/`, `immigration/`, `owner/`, `family/`). Mandatory `topics:` field added to entity frontmatter. Slug resolution and creation paths updated to handle nested directories.

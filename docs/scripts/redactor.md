@@ -1,6 +1,6 @@
 # redactor.py
 
-Layer 2 + Layer 3 secret scrubber, per SPEC.v3 §"Secrets and PII".
+Layer 2 + Layer 3 secret scrubber for the chat-log write path.
 
 ## Layers implemented
 
@@ -33,9 +33,7 @@ Used as a library by `log_event.py` (`from redactor import redact`). Applied to 
 
 Stdlib only, no dependencies. Single file. Deterministic regex substitutions; no I/O beyond stdin/argv/stdout.
 
-## SPEC deviations
+## Regex coverage notes
 
-- SPEC.v3's PEM pattern stops at `-----END` (literal). Implementation extends it to the full `-----END … PRIVATE KEY-----` footer — treated as a SPEC typo.
-- SPEC.v3 lists `ghp_[0-9a-zA-Z]{36}` plus bare `gho_` / `ghs_`. Implementation applies the same `{36}` suffix to all three variants.
-
-Both are pending formalisation in SPEC v4.
+- The PEM pattern matches the full `-----BEGIN … PRIVATE KEY-----` to `-----END … PRIVATE KEY-----` envelope, not just the `-----BEGIN` opener.
+- All three GitHub token prefixes (`ghp_`, `gho_`, `ghs_`) carry the same `{36}` suffix; the canonical implementation is one regex family, not three.

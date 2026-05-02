@@ -5,7 +5,7 @@ description: >
   summary to Telegram or display in terminal. Use when the user asks about
   today's schedule, calendar, agenda, meetings, or "what's on my calendar."
 compatibility: Requires MCP Google Calendar integration
-allowed-tools: mcp__claude_ai_Google_Calendar__gcal_list_calendars mcp__claude_ai_Google_Calendar__gcal_list_events mcp__plugin_telegram_telegram__reply
+allowed-tools: mcp__claude_ai_Google_Calendar__list_calendars mcp__claude_ai_Google_Calendar__list_events mcp__plugin_telegram_telegram__reply
 metadata:
   author: openclaw
   version: "1.0"
@@ -33,7 +33,7 @@ All times use **Europe/Sofia** timezone.
 
 ### 2. List all calendars
 
-Call `gcal_list_calendars` to get all accessible calendars. Filter to calendars where `accessRole` is `owner`, `writer`, or `reader` (skip `freeBusyReader`).
+Call `list_calendars` to get all accessible calendars. Filter to calendars where `accessRole` is `owner`, `writer`, or `reader` (skip `freeBusyReader`).
 
 Split calendars into two groups:
 - **Personal** — calendars that are NOT holiday calendars (id does NOT contain `#holiday@group.v.calendar.google.com`)
@@ -43,7 +43,7 @@ Split calendars into two groups:
 
 ### 3. Fetch events for each calendar
 
-For each calendar (after dedup), call `gcal_list_events` with:
+For each calendar (after dedup), call `list_events` with:
 - `calendarId`: the calendar's `id`
 - `timeMin`: target date at `00:00:00`
 - `timeMax`: target date at `23:59:59`

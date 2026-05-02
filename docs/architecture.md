@@ -95,6 +95,7 @@ The `summaries/` subtree is parallel to the per-month log folders, never nested 
 | `* * * * *`     | [`ginarr-watchdog.sh`](scripts/ginarr-watchdog.md)                       | Keep the bot tmux session and Telegram plugin alive.                       |
 | `15 0 * * *`    | [`summarize-day.sh`](scripts/summarize-day.md)                           | Roll up yesterday's `logs/<date>.jsonl` into `logs/summaries/`.            |
 | `25 0 * * *`    | [`ingest-and-weave.sh`](scripts/ingest-and-weave.md)                     | Weave entities from the new daily summary into `wiki/entities/`. Chained ten minutes after `summarize-day` to give it time to finish. |
+| `0 */6 * * *`   | [`lint-indexes.sh`](scripts/lint-indexes.md)                             | Sync every folder's `index.md` in the manual Obsidian vault every six hours. |
 | `0 9 * * 0`     | [`lint-wiki-reminder.sh`](scripts/lint-wiki-reminder.md)                 | Weekly Telegram nudge to run `/lint-wiki` manually. Does NOT auto-run the lint. |
 
 The chain is intentionally sequential (`summarize-day` → `ingest-and-weave`) but uncoupled (separate cron lines, not a single wrapper) so a failure in one does not block the other.
