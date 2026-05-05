@@ -24,6 +24,14 @@ if ! tmux has-session -t "$SESSION" 2>/dev/null; then
     exit 0
 fi
 
+# 1b. Also nanny the obsidian-sync session. Ginarr is the primary consumer of
+# the vault (Auto-Wiki) so sync lives here, not in any sibling project.
+if ! tmux has-session -t obsidian-sync 2>/dev/null; then
+    echo "$(date -u) — obsidian-sync dead, restarting" >> "$LOG"
+    tmux new-session -d -s obsidian-sync "$SCRIPT_DIR/obsidian-sync.sh"
+    echo "$(date -u) — obsidian-sync created" >> "$LOG"
+fi
+
 # 2. Find *our* bun process (the one whose env points at our STATE_DIR)
 BUN_PID=""
 for p in $(pgrep -f "bun server.ts" 2>/dev/null); do

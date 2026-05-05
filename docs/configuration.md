@@ -24,12 +24,12 @@ Managed by the Telegram channel plugin, **not** by this repo. Holds `TELEGRAM_BO
 
 ## Obsidian Sync (current deployment)
 
-The vault at `$GINARR_VAULT_ROOT` is kept in sync with Obsidian's hosted service via **`obsidian-headless`** (github.com/obsidianmd/obsidian-headless), the official Obsidian-made headless client that ships an `ob` binary. The daemon is **not owned by this repo** — it lives in a sibling project:
+The vault at `$GINARR_VAULT_ROOT` is kept in sync with Obsidian's hosted service via **`obsidian-headless`** (github.com/obsidianmd/obsidian-headless), the official Obsidian-made headless client that ships an `ob` binary. The daemon lives in this repo because Ginarr's Auto-Wiki is the primary consumer of the vault:
 
-- Script: `~/OpenClaw/.claude/scripts/obsidian-sync.sh` (a 30-second `while true` loop running `ob sync`).
-- Log: `~/OpenClaw/.claude/scripts/logs/obsidian-sync-last.log` — current tick's output, overwritten each cycle.
-- Tmux session: `obsidian-sync` (separate from `ginarr` / `claude` so daemon kills don't take Claude down).
-- Auto-restart: `~/OpenClaw/.claude/scripts/claude-watchdog.sh` (cron every minute) ensures the tmux session exists; recreates it if dead. Survives reboots since cron starts before the watchdog re-checks.
+- Script: [`~/Ginarr/.claude/scripts/obsidian-sync.sh`](scripts/obsidian-sync.md) — `while true; do timeout --signal=KILL 180 ob sync; sleep 30; done`.
+- Log: `~/Ginarr/.claude/scripts/logs/obsidian-sync-last.log` — current tick's output, overwritten each cycle.
+- Tmux session: `obsidian-sync` (separate from `ginarr` so daemon kills don't take the bot down).
+- Auto-restart: [`ginarr-watchdog.sh`](scripts/ginarr-watchdog.md) (cron every minute) ensures the tmux session exists; recreates it if dead. Survives reboots since cron starts before the watchdog re-checks.
 
 ### Install
 
@@ -45,7 +45,7 @@ The binary lands at `~/.nvm/versions/node/v22.22.0/bin/ob`. Auth state survives 
 
 The daemon script `obsidian-sync.sh` prepends `$HOME/.bun/bin:$HOME/.nvm/versions/node/v22.22.0/bin` to `PATH` so the `ob` cli's `#!/usr/bin/env node` shebang resolves to Node 22, not the system `/usr/bin/node` (which is 20.x and triggers `NODE_MODULE_VERSION` mismatch on the native sqlite addon).
 
-On a fresh deployment without OpenClaw there is no sync at all; the vault stays local until something is wired up.
+On a fresh deployment, install `obsidian-headless` first and run `ob login` once to seed the auth token; from there the watchdog handles everything.
 
 ### "Logs/notes don't appear in Obsidian" — three knobs
 
@@ -81,7 +81,7 @@ Healthy iterations finish in ~30 s, so 180 s is a ~6× margin. If the connect we
 **Detect.**
 
 ```bash
-stat -c '%y' ~/OpenClaw/.claude/scripts/logs/obsidian-sync-last.log   # should be within ~30 s
+stat -c '%y' ~/Ginarr/.claude/scripts/logs/obsidian-sync-last.log    # should be within ~30 s
 tmux capture-pane -t obsidian-sync -pS -200 | grep '^\['               # iteration exit-code timeline
 ```
 
@@ -112,7 +112,7 @@ All cron entries live in the **owner's user crontab** (`crontab -e`), not in `/e
 
 | When            | Script                                                                       | Purpose                                                       |
 |-----------------|------------------------------------------------------------------------------|---------------------------------------------------------------|
-| `* * * * *`     | `~/Ginarr/.claude/scripts/ginarr-watchdog.sh`                                | Keep the `ginarr` tmux session and the Telegram plugin alive. |
+| `* * * * *`     | `~/Ginarr/.claude/scripts/ginarr-watchdog.sh`                                | Keep the `ginarr` and `obsidian-sync` tmux sessions alive; check Telegram plugin health. |
 | `15 0 * * *`    | `~/Ginarr/.claude/scripts/summarize-day.sh`                                  | Daily roll-up of `logs/<date>.jsonl` into `logs/summaries/`.  |
 | `25 0 * * *`    | `~/Ginarr/.claude/scripts/ingest-and-weave.sh`                               | Weave entities from the new daily summary into `wiki/entities/`. |
 | `0 9 * * 0`     | `~/Ginarr/.claude/scripts/lint-wiki-reminder.sh`                             | Weekly Telegram nudge: time to run `/lint-wiki` manually.     |
