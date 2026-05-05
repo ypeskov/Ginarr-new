@@ -66,6 +66,33 @@ All three must align. Missing any one makes `logs/**/*.jsonl` invisible on the M
 - `ob sync-list-local` / `ob sync-list-remote` — enumerate vaults.
 - `ob sync-config --help` — full option list (conflict strategy, excluded folders, config categories, device name, sync mode).
 
+### Hang failure mode (now bounded by wrapper-side timeout)
+
+**Root cause.** `obsidian-headless` has heartbeat logic (20 s ping interval, 120 s silence → disconnect) but it is installed inside the WebSocket `onopen` callback — it only guards a connection that successfully opened. The initial `connect()` call returns a `new Promise` with **no timeout**. If the WebSocket's TCP SYN gets lost (network blip, dropped RST, NAT state-table eviction), neither `onopen` nor `onclose` fires, the Promise never settles, and `ob sync` blocks on `await e.connect(...)` forever. The wrapper's `while true; do ob sync; sleep 30; done` then blocks on that single hung call — the next iteration never starts, the watchdog only checks tmux session existence, and the daemon stays "alive" while doing nothing. Observed once: 2026-05-04 13:51 UTC → 2026-05-05 19:14 UTC, ~30 hours stuck on `Connecting...` after a network event that left no trace in journalctl.
+
+**Mitigation (in place since 2026-05-05).** `obsidian-sync.sh` wraps each iteration:
+
+```bash
+timeout --signal=KILL 180 ob sync --path "$VAULT_PATH" > "$SYNC_LOG" 2>&1
+```
+
+Healthy iterations finish in ~30 s, so 180 s is a ~6× margin. If the connect wedges, SIGKILL fires after 3 minutes, the wrapper logs `exit=137`, then `sleep 30` and a fresh iteration runs. The class "stuck for hours" is no longer possible. SIGKILL, not SIGTERM — `ob` catches SIGTERM and prints `Received signal to shut down... Disconnected from server`, but the Node process doesn't actually exit (async handles never finalise).
+
+**Detect.**
+
+```bash
+stat -c '%y' ~/OpenClaw/.claude/scripts/logs/obsidian-sync-last.log   # should be within ~30 s
+tmux capture-pane -t obsidian-sync -pS -200 | grep '^\['               # iteration exit-code timeline
+```
+
+Healthy timeline is `sync exit=0` once per ~30 s. A `sync exit=137` is the timeout firing — annoying but bounded.
+
+**Manual recovery (if it ever wedges inside the 3-minute window).**
+
+```bash
+kill -9 "$(pgrep -f 'bin/ob sync')"
+```
+
 ## Bootstrap on a new machine
 
 1. Clone this repo.
