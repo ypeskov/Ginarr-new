@@ -82,31 +82,41 @@ def food_window(food_by_day, latest_date, days):
     window = {k: v for k, v in food_by_day.items() if k >= cutoff and k <= latest_date}
     if not window:
         return None
+    macro_days = {k: v for k, v in window.items() if v["has_macro"]}
+
     kcal_vals = [v["kcal"] for v in window.values()]
     mean_kcal = sum(kcal_vals) / len(kcal_vals)
-    mean_p = sum(v["protein"] for v in window.values()) / len(window)
-    mean_f = sum(v["fat"] for v in window.values()) / len(window)
+    mean_p_all = sum(v["protein"] for v in window.values()) / len(window)
+    mean_f_all = sum(v["fat"] for v in window.values()) / len(window)
     max_d = max(window.items(), key=lambda x: x[1]["kcal"])
     min_d = min(window.items(), key=lambda x: x[1]["kcal"])
-    return {
+
+    out = {
         "days_logged": len(window),
         "days_in_window": days,
         "mean_kcal": round(mean_kcal),
-        "mean_protein_g": round(mean_p, 1),
-        "mean_fat_g": round(mean_f, 1),
+        "mean_protein_g_all_days": round(mean_p_all, 1),
+        "mean_fat_g_all_days": round(mean_f_all, 1),
         "max_day": {"date": max_d[0].isoformat(), "kcal": round(max_d[1]["kcal"])},
         "min_day": {"date": min_d[0].isoformat(), "kcal": round(min_d[1]["kcal"])},
+        "macro_days": len(macro_days),
     }
+    if macro_days:
+        out["mean_protein_g"] = round(sum(v["protein"] for v in macro_days.values()) / len(macro_days), 1)
+        out["mean_fat_g"] = round(sum(v["fat"] for v in macro_days.values()) / len(macro_days), 1)
+    return out
 
 
 def food_stats(food, latest_date, windows):
-    by_day = defaultdict(lambda: {"kcal": 0, "protein": 0, "fat": 0, "count": 0})
+    by_day = defaultdict(lambda: {"kcal": 0, "protein": 0, "fat": 0, "count": 0, "has_macro": False})
     for f in food:
         d = parse_iso_date(f["meal_datetime"])
         by_day[d]["kcal"] += f.get("calories", 0) or 0
         by_day[d]["protein"] += f.get("proteins", 0) or 0
         by_day[d]["fat"] += f.get("fats", 0) or 0
         by_day[d]["count"] += 1
+        if f.get("proteins") is not None or f.get("fats") is not None:
+            by_day[d]["has_macro"] = True
 
     out = {
         "total_entries": len(food),
@@ -115,12 +125,36 @@ def food_stats(food, latest_date, windows):
     if by_day:
         out["earliest_log"] = min(by_day).isoformat()
         out["latest_log"] = max(by_day).isoformat()
+        macro_days_all = sorted(d for d, v in by_day.items() if v["has_macro"])
+        if macro_days_all:
+            out["macro_tracking_started"] = macro_days_all[0].isoformat()
     out["windows"] = {}
     for w in windows:
         stats = food_window(by_day, latest_date, w)
         if stats:
             out["windows"][f"{w}d"] = stats
     return out
+
+
+def lbm_estimate(weight_kg):
+    """Lean body mass range under standard body-fat assumptions for someone in
+    long recovery from severe obesity (current BMI still in the obese range).
+
+    The skill prompt is the source of truth for *which* assumption to apply;
+    this function just exposes the math so the digest doesn't have to recompute
+    in the LLM. Both `low` and `high` are returned and the digest picks the
+    band it wants to talk about.
+    """
+    return {
+        "weight_kg": weight_kg,
+        "assumed_body_fat_pct": {"low": 30, "mid": 35, "high": 40},
+        "lbm_kg": {
+            "at_30pct": round(weight_kg * 0.70, 1),
+            "at_35pct": round(weight_kg * 0.65, 1),
+            "at_40pct": round(weight_kg * 0.60, 1),
+        },
+        "note": "Use LBM (or target weight at BMI 25) as the denominator for protein-per-kg targets, not total body weight.",
+    }
 
 
 def main():
@@ -156,6 +190,7 @@ def main():
     if weights:
         latest_date, latest_w = weights[-1]
         result["weight"] = weight_stats(weights, latest_date, latest_w)
+        result["lbm"] = lbm_estimate(latest_w)
         latest_for_food = latest_date
     else:
         latest_for_food = date.today()

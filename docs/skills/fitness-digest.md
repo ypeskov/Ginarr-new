@@ -5,7 +5,8 @@ Reads cached JSON in `wiki/entities/fitness/_data/`, computes weight trend and c
 ## Source
 
 - Skill: [`.claude/skills/fitness-digest/SKILL.md`](../../.claude/skills/fitness-digest/SKILL.md) — authoritative behaviour.
-- Analyzer: `.claude/skills/fitness-digest/scripts/analyze.py` — pure stdlib. Picks the newest `*_both.json` from `_data/` (or takes an explicit path), computes weight deltas / min-max / recent rate and per-window calorie + protein + fat means, prints one JSON object on stdout. Single source of truth for the numbers; the skill only formats and adds recommendations.
+- Analyzer: `.claude/skills/fitness-digest/scripts/analyze.py` — pure stdlib. Picks the newest `*_both.json` from `_data/` (or takes an explicit path), computes weight deltas / min-max / recent rate, an `lbm` block (LBM range under 30/35/40% body-fat assumptions), and per-window calorie / protein / fat means. Protein and fat are reported twice per window: `mean_protein_g` (averaged over `macro_days` only — use this) and `mean_protein_g_all_days` (legacy denominator including pre-2025-09-08 days with no macro fields, for sanity checking). Single source of truth for the numbers; the skill only formats and adds recommendations.
+- Persistence: every run writes the formatted digest to `wiki/entities/fitness/digests/<latest_date>_<window>.md`. Re-running the same window on the same day overwrites; different windows or different days create new files. Use the directory to compare across periods without re-running the analyzer for old data.
 
 ## Dependencies
 
