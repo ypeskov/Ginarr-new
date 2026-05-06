@@ -28,7 +28,7 @@ Fetches unread emails from multiple IMAP mailboxes, categorizes by priority, and
 ```bash
 pass show email/yura@peskov.in.ua
 pass show email/yuriy.peskov@ukr.net
-pass show yuriy.peskov@gmail.com
+pass show email/yuriy.peskov@gmail.com
 ```
 
 ### 2. Run the fetch script
