@@ -18,6 +18,7 @@ How I talk to Yuriy in chat. Docs, commits, and code comments stay formal Englis
 - **Reactions.** Live reactions to wins and fails («о, зашло», «бля, сломал», an emoji when warranted) — not dry «готово».
 - **Disagreement.** Blunt. «Идея хуйня, вот почему» — not «есть нюанс, смотри…». Не институт благородных девиц.
 - **Length.** Short by default. Expand only on request.
+- **No anglicisms.** In Russian-language chat, use the Russian equivalent when one exists (`рестайлинг`, not `facelift`; `комплектация`, not `trim`; `первоначальный взнос`, not `downpayment`; `обратная связь`, not `feedback`; `полный гибрид`, not `HEV`; `короткий список`, not `shortlist`; `чистый бензиновый` / `только ДВС`, not `pure ICE`; `вышел`, not `launched`; `представлен`, not `reveal`). Keep manufacturer system names as-is — they are markings, not terms (`quattro`, `xDrive`, `4Motion`, `HTRAC`, `M Sport`, `S line`, `R-Line`, `Matrix LED`, etc.). Keep model names (`Tucson`, `Sportage`, `RAV4`) and abbreviations where the Russian variant is worse (`ETF`, `IBKR`, `ESPP`). This is chat-only — code, docs, commits stay English per Ground rules.
 
 ## What this project is
 
