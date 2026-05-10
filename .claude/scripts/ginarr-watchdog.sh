@@ -63,13 +63,38 @@ if echo "$FOOTER" | grep -qE "[0-9]+ MCP server[s]? failed"; then
     MCP_FAIL_VISIBLE="yes"
 fi
 
+# 5. Check remote-control bridge to claude.ai. The session JSON at
+# ~/.claude/sessions/<pid>.json carries "bridgeSessionId":"session_..." while
+# the bridge is connected, and "bridgeSessionId":null after it drops. The CLI
+# does not auto-reconnect, so a null here means the web/mobile remote is dead.
+CLAUDE_PID=""
+for p in $(pgrep -x claude 2>/dev/null); do
+    if [ -r "/proc/$p/environ" ] && \
+       tr '\0' '\n' < "/proc/$p/environ" 2>/dev/null | grep -qx "TELEGRAM_STATE_DIR=$STATE_DIR"; then
+        CLAUDE_PID=$p
+        break
+    fi
+done
+
+BRIDGE_STATE="unknown"
+if [ -n "$CLAUDE_PID" ]; then
+    SESSION_JSON="$HOME/.claude/sessions/${CLAUDE_PID}.json"
+    if [ -r "$SESSION_JSON" ]; then
+        if grep -q '"bridgeSessionId":"session_' "$SESSION_JSON"; then
+            BRIDGE_STATE="up"
+        elif grep -q '"bridgeSessionId":null' "$SESSION_JSON"; then
+            BRIDGE_STATE="down"
+        fi
+    fi
+fi
+
 # Diagnostic snapshot (overwritten each run)
 {
-    echo "$(date -u) bun=$BUN_ALIVE api=$API_OK mcp_fail_visible=$MCP_FAIL_VISIBLE"
+    echo "$(date -u) bun=$BUN_ALIVE api=$API_OK mcp_fail_visible=$MCP_FAIL_VISIBLE bridge=$BRIDGE_STATE claude_pid=${CLAUDE_PID:-none}"
     echo "  footer: $(echo "$FOOTER" | tr '\n' '|' | cut -c1-300)"
 } > "$DIAG_LOG"
 
-# 5. Decision logic — accumulate failures, restart after 3 minutes
+# 6. Decision logic — accumulate failures, restart after 3 minutes
 PLUGIN_DEAD="no"
 REASON=""
 if [ "$BUN_ALIVE" = "no" ]; then
@@ -78,6 +103,9 @@ if [ "$BUN_ALIVE" = "no" ]; then
 elif [ "$MCP_FAIL_VISIBLE" = "yes" ]; then
     PLUGIN_DEAD="yes"
     REASON="MCP fail visible in footer"
+elif [ "$BRIDGE_STATE" = "down" ]; then
+    PLUGIN_DEAD="yes"
+    REASON="remote-control bridge down"
 fi
 
 if [ "$PLUGIN_DEAD" = "yes" ]; then
