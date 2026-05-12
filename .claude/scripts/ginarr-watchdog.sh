@@ -15,21 +15,46 @@ DIAG_LOG="$SCRIPT_DIR/logs/watchdog-diag.log"
 MCP_STATE="$SCRIPT_DIR/logs/mcp-fail-state"
 mkdir -p "$(dirname "$LOG")"
 
+# Cross-bot liveness channel (see docs/scripts/ginarr-watchdog.md "Shared heartbeat").
+SHARED_SELF="$HOME/shared/ginarr"
+SHARED_PEER="$HOME/shared/openclaw"
+HEARTBEAT_FILE="$SHARED_SELF/last-seen.txt"
+ALERT_MARKER="$SHARED_SELF/alerted-about-openclaw.txt"
+PEER_NAME="openclaw"
+OWNER_CHAT_ID="353065630"
+mkdir -p "$SHARED_SELF"
+
+write_heartbeat() {
+    local tmux_alive="$1" obs_alive="$2" note="$3"
+    {
+        echo "ts_utc=$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+        echo "tmux_session=$SESSION"
+        echo "tmux_alive=$tmux_alive"
+        echo "obsidian_sync_alive=$obs_alive"
+        echo "note=$note"
+    } > "$HEARTBEAT_FILE.tmp" && mv "$HEARTBEAT_FILE.tmp" "$HEARTBEAT_FILE"
+}
+
 # 1. Ensure tmux session exists
 if ! tmux has-session -t "$SESSION" 2>/dev/null; then
     echo "$(date -u) — $SESSION dead, restarting" >> "$LOG"
     tmux new-session -d -s "$SESSION" "$SCRIPT_DIR/ginarr-bot.sh"
     echo "$(date -u) — $SESSION created" >> "$LOG"
     rm -f "$MCP_STATE"
+    OBS_ALIVE_FAST=0
+    tmux has-session -t obsidian-sync 2>/dev/null && OBS_ALIVE_FAST=1
+    write_heartbeat 0 "$OBS_ALIVE_FAST" "restarting_ginarr"
     exit 0
 fi
 
 # 1b. Also nanny the obsidian-sync session. Ginarr is the primary consumer of
 # the vault (Auto-Wiki) so sync lives here, not in any sibling project.
+OBS_ALIVE=1
 if ! tmux has-session -t obsidian-sync 2>/dev/null; then
     echo "$(date -u) — obsidian-sync dead, restarting" >> "$LOG"
     tmux new-session -d -s obsidian-sync "$SCRIPT_DIR/obsidian-sync.sh"
     echo "$(date -u) — obsidian-sync created" >> "$LOG"
+    OBS_ALIVE=0
 fi
 
 # 2. Find *our* bun process (the one whose env points at our STATE_DIR)
@@ -127,5 +152,47 @@ else
     if [ -f "$MCP_STATE" ]; then
         echo "$(date -u) — plugin recovered, clearing fail state" >> "$LOG"
         rm -f "$MCP_STATE"
+    fi
+fi
+
+# 7. Heartbeat — publish liveness for the peer bot to read.
+NOTE=""
+if pgrep -f "$SCRIPT_DIR/ingest-and-weave.sh" >/dev/null 2>&1; then
+    NOTE="ingest_running"
+fi
+write_heartbeat 1 "$OBS_ALIVE" "$NOTE"
+
+# 8. Peer-down check — alert owner via Telegram if OpenClaw has been silent
+# for > 10 minutes. Dedup via $ALERT_MARKER (no repeat within 1 hour).
+# Guard: if peer file never existed at all, do not alert — channel is still
+# bootstrapping. Only alert on a previously-seen peer going silent.
+PEER_FILE="$SHARED_PEER/last-seen.txt"
+if [ -f "$PEER_FILE" ]; then
+    PEER_TS=$(grep -E '^ts_utc=' "$PEER_FILE" | head -1 | cut -d= -f2-)
+    if [ -n "$PEER_TS" ]; then
+        PEER_EPOCH=$(date -d "$PEER_TS" +%s 2>/dev/null || echo 0)
+        NOW_EPOCH=$(date -u +%s)
+        AGE=$(( NOW_EPOCH - PEER_EPOCH ))
+        if [ "$AGE" -gt 600 ]; then
+            SEND=1
+            if [ -f "$ALERT_MARKER" ]; then
+                MARKER_EPOCH=$(stat -c %Y "$ALERT_MARKER" 2>/dev/null || echo 0)
+                MARKER_AGE=$(( NOW_EPOCH - MARKER_EPOCH ))
+                [ "$MARKER_AGE" -lt 3600 ] && SEND=0
+            fi
+            if [ "$SEND" = "1" ] && [ -n "$BOT_TOKEN" ]; then
+                AGE_MIN=$(( AGE / 60 ))
+                MSG="[ginarr] peer $PEER_NAME down for ${AGE_MIN}m. Last seen $PEER_TS."
+                curl -s --max-time 5 \
+                    -d "chat_id=$OWNER_CHAT_ID" \
+                    --data-urlencode "text=$MSG" \
+                    "https://api.telegram.org/bot${BOT_TOKEN}/sendMessage" > /dev/null
+                touch "$ALERT_MARKER"
+                echo "$(date -u) — alerted owner: $PEER_NAME down ${AGE_MIN}m" >> "$LOG"
+            fi
+        elif [ -f "$ALERT_MARKER" ]; then
+            rm -f "$ALERT_MARKER"
+            echo "$(date -u) — $PEER_NAME recovered, cleared alert marker" >> "$LOG"
+        fi
     fi
 fi
