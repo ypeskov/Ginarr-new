@@ -48,14 +48,14 @@ Output: JSON array `{ticker, price, change, pct}`.
 ### 3. Analyze and compose digest
 
 From the raw JSON:
-- **Check history first**: Read `/home/krokobot/Ginarr/.claude/scripts/logs/news-sent-titles.txt` — this file contains titles of previously sent stories. **SKIP any story whose title closely matches** a previously sent one (fuzzy match — same topic counts as duplicate even if wording differs slightly).
+- **Check history first**: Read `$CLAUDE_PROJECT_DIR/.claude/scripts/logs/news-sent-titles.txt` — this file contains titles of previously sent stories. **SKIP any story whose title closely matches** a previously sent one (fuzzy match — same topic counts as duplicate even if wording differs slightly).
 - Select **top 5 most interesting NEW stories** per category from the last 24-48 hours
 - **AI**: breakthroughs, major releases, partnerships, funding, policy
 - **IT**: trending stories, security incidents, product launches, industry shifts
 - **Ukraine**: most significant political, military, economic developments
 - Write **2-3 sentence summary in Russian** for each story. Include the original link.
 - **Deduplicate**: if same story in multiple feeds, merge and pick best source link
-- **After composing**: append all sent story titles (one per line) to `/home/krokobot/Ginarr/.claude/scripts/logs/news-sent-titles.txt`. Keep only last 200 lines to prevent file bloat.
+- **After composing**: append all sent story titles (one per line) to `$CLAUDE_PROJECT_DIR/.claude/scripts/logs/news-sent-titles.txt`. Keep only last 200 lines to prevent file bloat.
 - **ETF**: format as list with price, change %, emoji. Alert if any ETF moves ±3%.
 
 ### 4. Format (MarkdownV2 for Telegram)

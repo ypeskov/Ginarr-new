@@ -5,7 +5,7 @@ Per-minute cron job that keeps the `ginarr` and `obsidian-sync` tmux sessions al
 ## Cron
 
 ```cron
-* * * * * /home/krokobot/Ginarr/.claude/scripts/ginarr-watchdog.sh
+* * * * * <repo>/.claude/scripts/ginarr-watchdog.sh
 ```
 
 ## Checks each tick

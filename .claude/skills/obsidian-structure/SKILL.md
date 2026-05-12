@@ -11,7 +11,7 @@ metadata:
 
 # Obsidian Vault Structure — Routing Rules
 
-Vault path: `/home/krokobot/obsidian-vaul`
+Vault path: `$HOME/obsidian-vaul`
 
 ## Folder Taxonomy
 

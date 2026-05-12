@@ -10,7 +10,7 @@ Cron wrapper that runs Claude headless with the `/lint-indexes` skill against th
 ## Cron line
 
 ```
-0 */6 * * * /home/krokobot/Ginarr/.claude/scripts/lint-indexes.sh
+0 */6 * * * <repo>/.claude/scripts/lint-indexes.sh
 ```
 
 Fires every 6 hours on the hour: 00:00, 06:00, 12:00, 18:00 UTC. The 00:00 firing is independent of `summarize-day` (00:15) and `ingest-and-weave` (00:25) — different files, no contention.

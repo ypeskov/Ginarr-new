@@ -95,6 +95,8 @@ kill -9 "$(pgrep -f 'bin/ob sync')"
 
 ## Bootstrap on a new machine
 
+The repo is path-portable: every script self-locates its own `REPO_ROOT` via `$(dirname "$0")`, and `.claude/settings.json` hooks expand `$CLAUDE_PROJECT_DIR` (set by Claude Code). You can clone anywhere; nothing assumes `~/Ginarr/`. In the per-script docs `<repo>` is a placeholder for the absolute path to your local clone — substitute it when copy-pasting cron lines into your crontab.
+
 1. Clone this repo.
 2. `cp .claude/.env.example .claude/.env` and set `GINARR_VAULT_ROOT` to your vault path.
 3. Make sure the vault exists and contains `logs/` and `wiki/` (see [architecture.md](architecture.md)).

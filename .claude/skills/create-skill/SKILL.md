@@ -65,14 +65,20 @@ Create a launcher at `.claude/scripts/<name>.sh` that calls the skill via `claud
 
 ```bash
 #!/bin/bash
-export HOME=/home/krokobot
-export PATH="$HOME/.bun/bin:$HOME/.local/bin:/home/linuxbrew/.linuxbrew/bin:/usr/local/bin:/usr/bin:/bin:$PATH"
+# Self-locate so the script works from any clone path.
+REPO_ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
+: "${HOME:=$(eval echo "~$(whoami)")}"
 
-LOG="$HOME/Ginarr/.claude/scripts/logs/<name>.log"
+export PATH="$HOME/.bun/bin:$HOME/.local/bin:/opt/homebrew/bin:/home/linuxbrew/.linuxbrew/bin:/usr/local/bin:/usr/bin:/bin:$PATH"
+
+ENV_FILE="$REPO_ROOT/.claude/.env"
+[ -f "$ENV_FILE" ] && { set -a; . "$ENV_FILE"; set +a; }
+
+LOG="$REPO_ROOT/.claude/scripts/logs/<name>.log"
 mkdir -p "$(dirname "$LOG")"
 
 echo "=== $(date -u) ===" >> "$LOG"
-cd "$HOME/Ginarr"
+cd "$REPO_ROOT"
 claude -p "/<name>" \
   --allowedTools '<required tools>' \
   --permission-mode acceptEdits \

@@ -1,23 +1,23 @@
 {
   "statusLine": {
     "type": "command",
-    "command": "bash /home/krokobot/Ginarr/.claude/scripts/statusline.sh"
+    "command": "bash \"$CLAUDE_PROJECT_DIR/.claude/scripts/statusline.sh\""
   },
   "hooks": {
     "PreToolUse": [
-      {"matcher": "Read|Edit|Write|Bash|NotebookEdit", "hooks": [{"type": "command", "command": "python3 /home/krokobot/Ginarr/.claude/scripts/pre_tool_denylist.py"}]}
+      {"matcher": "Read|Edit|Write|Bash|NotebookEdit", "hooks": [{"type": "command", "command": "python3 \"$CLAUDE_PROJECT_DIR/.claude/scripts/pre_tool_denylist.py\""}]}
     ],
     "UserPromptSubmit": [
-      {"hooks": [{"type": "command", "command": "python3 /home/krokobot/Ginarr/.claude/scripts/log_event.py --event user"}]}
+      {"hooks": [{"type": "command", "command": "python3 \"$CLAUDE_PROJECT_DIR/.claude/scripts/log_event.py\" --event user"}]}
     ],
     "Stop": [
-      {"hooks": [{"type": "command", "command": "python3 /home/krokobot/Ginarr/.claude/scripts/log_event.py --event assistant"}]}
+      {"hooks": [{"type": "command", "command": "python3 \"$CLAUDE_PROJECT_DIR/.claude/scripts/log_event.py\" --event assistant"}]}
     ],
     "SessionStart": [
-      {"hooks": [{"type": "command", "command": "python3 /home/krokobot/Ginarr/.claude/scripts/log_event.py --event session-start"}]}
+      {"hooks": [{"type": "command", "command": "python3 \"$CLAUDE_PROJECT_DIR/.claude/scripts/log_event.py\" --event session-start"}]}
     ],
     "SessionEnd": [
-      {"hooks": [{"type": "command", "command": "python3 /home/krokobot/Ginarr/.claude/scripts/log_event.py --event session-end"}]}
+      {"hooks": [{"type": "command", "command": "python3 \"$CLAUDE_PROJECT_DIR/.claude/scripts/log_event.py\" --event session-end"}]}
     ]
   }
 }

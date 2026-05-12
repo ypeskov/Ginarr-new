@@ -6,18 +6,18 @@ Thin wrapper that fires Claude Code in headless mode against the `ingest-and-wea
 
 - Script: [`.claude/scripts/ingest-and-weave.sh`](../../.claude/scripts/ingest-and-weave.sh).
 - Skill it invokes: [`/ingest-and-weave`](../skills/ingest-and-weave.md).
-- Cron line: `25 0 * * * /home/krokobot/Ginarr/.claude/scripts/ingest-and-weave.sh`.
+- Cron line: `25 0 * * * <repo>/.claude/scripts/ingest-and-weave.sh`.
 
 ## Installing the cron entry
 
 The cron line lives in the **owner's user crontab** (not `/etc/cron.d/`), the same place the watchdog and `summarize-day` are wired. Install once per machine:
 
 ```bash
-chmod +x /home/krokobot/Ginarr/.claude/scripts/ingest-and-weave.sh
+chmod +x <repo>/.claude/scripts/ingest-and-weave.sh
 
 # Append the line if it isn't already there
 ( crontab -l 2>/dev/null | grep -F ingest-and-weave.sh ) || \
-  ( crontab -l 2>/dev/null; echo '25 0 * * * /home/krokobot/Ginarr/.claude/scripts/ingest-and-weave.sh' ) | crontab -
+  ( crontab -l 2>/dev/null; echo '25 0 * * * <repo>/.claude/scripts/ingest-and-weave.sh' ) | crontab -
 
 # Verify
 crontab -l | grep ingest-and-weave
@@ -45,8 +45,8 @@ The script does not pass `--continue` — each cron run is a fresh headless sess
 ## Manual run
 
 ```
-bash /home/krokobot/Ginarr/.claude/scripts/ingest-and-weave.sh
-tail -50 /home/krokobot/Ginarr/.claude/scripts/logs/ingest-and-weave.log
+bash <repo>/.claude/scripts/ingest-and-weave.sh
+tail -50 <repo>/.claude/scripts/logs/ingest-and-weave.log
 ```
 
 The launcher is idempotent — re-running the same night is a no-op once entities have been woven for that day. To force a re-weave of a specific day, ask the assistant directly with the date (e.g. `/ingest-and-weave 2026-04-26`) — the cron launcher does not pass arguments.

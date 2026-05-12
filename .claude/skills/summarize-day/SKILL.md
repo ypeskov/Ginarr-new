@@ -121,7 +121,7 @@ If `$GINARR_VAULT_ROOT` does not exist: print `vault not found` and exit 1.
 
 ## Invocation
 
-- **Cron** (headless): `15 0 * * *  /home/krokobot/Ginarr/.claude/scripts/summarize-day.sh`. Runs daily at 00:15 UTC.
+- **Cron** (headless): `15 0 * * *  /absolute/path/to/Ginarr/.claude/scripts/summarize-day.sh` (substitute the absolute path of your local clone). Runs daily at 00:15 UTC.
 - **Manual backfill**: `claude -p "/summarize-day"` from the repo root, or invoke the slash command from inside an interactive session.
 - **Re-summarise a specific day** (overwrite): the user must say so explicitly with the date, e.g. "пересобери summary за 2026-04-23". Do not overwrite without that explicit ask.
 

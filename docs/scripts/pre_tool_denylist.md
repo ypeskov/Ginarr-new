@@ -9,7 +9,7 @@ Layer 1 of SPEC.v3 §"Secrets and PII" — a runtime-level access-control hook. 
 ```json
 "PreToolUse": [
   {"matcher": "Read|Edit|Write|Bash|NotebookEdit",
-   "hooks": [{"type": "command", "command": "python3 /home/krokobot/Ginarr/.claude/scripts/pre_tool_denylist.py"}]}
+   "hooks": [{"type": "command", "command": "python3 \"$CLAUDE_PROJECT_DIR/.claude/scripts/pre_tool_denylist.py\""}]}
 ]
 ```
 

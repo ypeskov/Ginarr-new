@@ -26,7 +26,7 @@ The `summaries/` subtree is parallel to the per-month folders, not nested inside
 
 ## Schedule
 
-- **Cron**: `15 0 * * * /home/krokobot/Ginarr/.claude/scripts/summarize-day.sh`. Fires at 00:15 UTC. Processes everything strictly before today's UTC date — i.e. the just-finished UTC day plus any backlog from days the cron missed (server down, vault unmounted, etc.).
+- **Cron**: `15 0 * * * <repo>/.claude/scripts/summarize-day.sh`. Fires at 00:15 UTC. Processes everything strictly before today's UTC date — i.e. the just-finished UTC day plus any backlog from days the cron missed (server down, vault unmounted, etc.).
 - **Idempotent**: never overwrites an existing summary. Re-running the cron job is safe; it's a no-op once the day is summarised.
 - **Today (UTC) is never summarised** — the day's JSONL is still being written. `recall` knows this and falls through to `logs/<date>.jsonl` directly when the question is about today.
 
@@ -34,10 +34,10 @@ The `summaries/` subtree is parallel to the per-month folders, not nested inside
 
 | Want                           | How                                                                  |
 |--------------------------------|----------------------------------------------------------------------|
-| Run it once now                | `bash /home/krokobot/Ginarr/.claude/scripts/summarize-day.sh`        |
+| Run it once now                | `bash <repo>/.claude/scripts/summarize-day.sh`        |
 | Backfill missing days          | Same — the skill detects gaps and fills them oldest-first            |
 | Re-summarise one day           | Ask the assistant explicitly: "пересобери summary за `<YYYY-MM-DD>`" |
-| Inspect what cron did          | `tail -50 /home/krokobot/Ginarr/.claude/scripts/logs/summarize-day.log` |
+| Inspect what cron did          | `tail -50 <repo>/.claude/scripts/logs/summarize-day.log` |
 | Inspect a generated file       | `Read $GINARR_VAULT_ROOT/logs/summaries/YYYY/MM/<date>.md`           |
 
 ## Format contract

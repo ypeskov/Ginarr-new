@@ -3,13 +3,18 @@
 # Identifies *its own* bun process by TELEGRAM_STATE_DIR in /proc/<pid>/environ, so it
 # cannot be confused with OpenClaw's bun when both bots run in parallel.
 # Cron: * * * * * (every minute)
+#
+# Linux-only: uses /proc/<pid>/environ. Telegram-specific infra; not used on
+# macOS forks without a Telegram bridge.
 
-export HOME=/home/krokobot
+REPO_ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
+: "${HOME:=$(eval echo "~$(whoami)")}"
+
 export PATH="$HOME/.bun/bin:$HOME/.local/bin:/home/linuxbrew/.linuxbrew/bin:/usr/local/bin:/usr/bin:/bin:$PATH"
 
 SESSION="ginarr"
-STATE_DIR="$HOME/Ginarr/.claude/channels/telegram"
-SCRIPT_DIR="$HOME/Ginarr/.claude/scripts"
+STATE_DIR="$REPO_ROOT/.claude/channels/telegram"
+SCRIPT_DIR="$REPO_ROOT/.claude/scripts"
 LOG="$SCRIPT_DIR/logs/watchdog.log"
 DIAG_LOG="$SCRIPT_DIR/logs/watchdog-diag.log"
 MCP_STATE="$SCRIPT_DIR/logs/mcp-fail-state"

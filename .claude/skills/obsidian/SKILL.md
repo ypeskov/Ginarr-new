@@ -14,7 +14,7 @@ metadata:
 
 ## Vault Location
 
-`/home/krokobot/obsidian-vaul` (main-1 vault, bidirectional sync via obsidian-headless)
+`$HOME/obsidian-vaul` (main-1 vault, bidirectional sync via obsidian-headless)
 
 ## Vault Structure
 

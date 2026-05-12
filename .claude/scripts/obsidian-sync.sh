@@ -1,16 +1,22 @@
 #!/bin/bash
-# Obsidian vault sync daemon — runs `ob sync` in a loop
+# Obsidian vault sync daemon — runs `ob sync` in a loop.
 # Auto-restarted by ginarr-watchdog.sh; never invoked directly.
+#
+# Linux-only: works around the lack of an Obsidian desktop client on Linux
+# by running the obsidian-headless `ob` cli under nvm node 22. On macOS use
+# the native Obsidian app with Obsidian Sync; this daemon is not needed.
 
-export HOME=/home/krokobot
+REPO_ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
+: "${HOME:=$(eval echo "~$(whoami)")}"
+
 # obsidian-headless (`ob`) needs Node >= 22 (nvm). Both bun and the nvm node 22
 # dir come before /usr/bin so the cli's `#!/usr/bin/env node` shebang resolves
 # to Node 22, not the system /usr/bin/node 20 (NODE_MODULE_VERSION mismatch on
 # the native better-sqlite3 addon).
 export PATH="$HOME/.bun/bin:$HOME/.nvm/versions/node/v22.22.0/bin:$HOME/.local/bin:/home/linuxbrew/.linuxbrew/bin:/usr/local/bin:/usr/bin:/bin:$PATH"
 
-VAULT_PATH="$HOME/obsidian-vaul"
-SYNC_LOG="$HOME/Ginarr/.claude/scripts/logs/obsidian-sync-last.log"
+VAULT_PATH="${GINARR_MAIN_VAULT:-$HOME/obsidian-vaul}"
+SYNC_LOG="$REPO_ROOT/.claude/scripts/logs/obsidian-sync-last.log"
 mkdir -p "$(dirname "$SYNC_LOG")"
 
 while true; do

@@ -6,7 +6,7 @@ Sends one Telegram reminder per week. Does NOT run the `lint-wiki` skill itself.
 
 - Script: [`.claude/scripts/lint-wiki-reminder.sh`](../../.claude/scripts/lint-wiki-reminder.sh).
 - Skill it nudges (run separately, by hand): [`/lint-wiki`](../skills/lint-wiki.md).
-- Cron line: `0 9 * * 0 /home/krokobot/Ginarr/.claude/scripts/lint-wiki-reminder.sh`.
+- Cron line: `0 9 * * 0 <repo>/.claude/scripts/lint-wiki-reminder.sh`.
 
 ## Why a reminder, not an auto-run
 
@@ -22,11 +22,11 @@ So the cron only nudges; the owner runs the skill when convenient.
 The cron line lives in the **owner's user crontab** (not `/etc/cron.d/`). Install once per machine:
 
 ```bash
-chmod +x /home/krokobot/Ginarr/.claude/scripts/lint-wiki-reminder.sh
+chmod +x <repo>/.claude/scripts/lint-wiki-reminder.sh
 
 # Append the line if it isn't already there
 ( crontab -l 2>/dev/null | grep -F lint-wiki-reminder.sh ) || \
-  ( crontab -l 2>/dev/null; echo '0 9 * * 0 /home/krokobot/Ginarr/.claude/scripts/lint-wiki-reminder.sh' ) | crontab -
+  ( crontab -l 2>/dev/null; echo '0 9 * * 0 <repo>/.claude/scripts/lint-wiki-reminder.sh' ) | crontab -
 
 # Verify
 crontab -l | grep lint-wiki-reminder
@@ -54,8 +54,8 @@ The wrapper does not pass `--continue` — each run is a fresh headless session.
 ## Manual run
 
 ```
-bash /home/krokobot/Ginarr/.claude/scripts/lint-wiki-reminder.sh
-tail -50 /home/krokobot/Ginarr/.claude/scripts/logs/lint-wiki-reminder.log
+bash <repo>/.claude/scripts/lint-wiki-reminder.sh
+tail -50 <repo>/.claude/scripts/logs/lint-wiki-reminder.log
 ```
 
 The script is safe to re-run — it just sends one more reminder.

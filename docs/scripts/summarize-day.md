@@ -6,18 +6,18 @@ Thin wrapper that fires Claude Code in headless mode against the `summarize-day`
 
 - Script: [`.claude/scripts/summarize-day.sh`](../../.claude/scripts/summarize-day.sh).
 - Skill it invokes: [`/summarize-day`](../skills/summarize-day.md).
-- Cron line: `15 0 * * * /home/krokobot/Ginarr/.claude/scripts/summarize-day.sh`.
+- Cron line: `15 0 * * * <repo>/.claude/scripts/summarize-day.sh`.
 
 ## Installing the cron entry
 
 The cron line lives in the **owner's user crontab** (not `/etc/cron.d/`), the same place the watchdog and the OpenClaw digest scripts are wired. Install once per machine:
 
 ```bash
-chmod +x /home/krokobot/Ginarr/.claude/scripts/summarize-day.sh
+chmod +x <repo>/.claude/scripts/summarize-day.sh
 
 # Append the line if it isn't already there
 ( crontab -l 2>/dev/null | grep -F summarize-day.sh ) || \
-  ( crontab -l 2>/dev/null; echo '15 0 * * * /home/krokobot/Ginarr/.claude/scripts/summarize-day.sh' ) | crontab -
+  ( crontab -l 2>/dev/null; echo '15 0 * * * <repo>/.claude/scripts/summarize-day.sh' ) | crontab -
 
 # Verify
 crontab -l | grep summarize-day
@@ -45,8 +45,8 @@ The script does not pass `--continue` — each cron run is a fresh headless sess
 ## Manual run
 
 ```
-bash /home/krokobot/Ginarr/.claude/scripts/summarize-day.sh
-tail -50 /home/krokobot/Ginarr/.claude/scripts/logs/summarize-day.log
+bash <repo>/.claude/scripts/summarize-day.sh
+tail -50 <repo>/.claude/scripts/logs/summarize-day.log
 ```
 
 The launcher is idempotent — re-running the same night is a no-op once the summary exists. To force a re-summary of one day, ask the assistant directly with the date, not via the cron launcher.
