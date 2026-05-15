@@ -1,60 +1,206 @@
 ---
 name: load-topic
 description: >
-  Load all entity pages and main-vault paths relevant to a named topic
-  into the current session's context, so the assistant can work on that
-  topic with full state. Reads the manifest at
-  `wiki/topics/<name>.md` (curated owner list) and walks
-  `wiki/entities/<name>/` plus any entity whose `topics:` includes the
-  topic. Use when the user asks to "load topic X", "загрузи дейтинг",
-  "переключись на работу", or invokes `/load-topic <name>`. Used at
-  session start to set up topic-scoped working memory.
+  Load a named Auto-Wiki topic into the current session according to
+  the tiered manifest at `wiki/topics/<name>.md`. Reads Hot context
+  deeply (with size preflight), Warm context as autoload capsules,
+  Cold context as visible references, and Archive context only on
+  demand. Use when the user asks to "load topic X", "загрузи дейтинг",
+  "переключись на работу", or invokes `/load-topic <name>`.
 metadata:
   project: Ginarr
-  version: "1.0"
+  version: "2.0"
 allowed-tools: Bash, Read, Glob
 ---
 
 # load-topic
 
-Topic-scoped context loader. Reads a topic manifest and the relevant entity / main-vault content into the current Claude Code session, so the rest of the conversation can run with that topic's full state available without ad-hoc grep on every turn.
+Topic-scoped context loader. Reads a tiered topic manifest and loads only the amount of Auto-Wiki / main-vault context justified by each entry's priority. This keeps session startup useful as the vault grows past the point where loading every status-active entity in a topic folder is affordable.
 
 This is the **read-side** companion of `edit-topic` (which curates manifests). Together they implement per-topic working memory on top of Ginarr's file-based architecture — vendor-neutral, no Claude-Code internals (UUIDs, sessions, `--resume`) involved.
 
 ## Layout
 
 - **Manifest** (read-only): `$GINARR_VAULT_ROOT/wiki/topics/<name>.md`
-- **Entity folder** (read-only): `$GINARR_VAULT_ROOT/wiki/entities/<name>/` plus entities elsewhere with `topics:` containing `<name>`
-- **Main vault paths**: as listed in the manifest's `## Main Obsidian vault` section
-- **Output**: nothing written. Skill loads files into context and prints a summary.
+- **Entity pages**: `$GINARR_VAULT_ROOT/wiki/entities/**/<slug>.md`
+- **Entity autoload boundary**: `<!-- ginarr:autoload-end -->`
+- **Main vault paths**: paths under `~/obsidian-vaul/` (excluding `Auto-Wiki/`) listed in manifest tiers
+- **Output**: no writes. The skill loads files into context and prints a ready-state report.
+
+Topic and entity filenames are `snake_case.md` (CLAUDE.md ground rule). No spaces, no Title Case — `wiki/topics/dating.md`, `wiki/entities/dating/anfisa.md`, not `Dating.md`.
 
 ## Topic taxonomy
 
-Closed-by-convention list (extendable via `edit-topic`): `dating`, `work`, `tech`, `health`, `finance`, `immigration`, `owner`, `family`.
+Closed-by-convention list (extendable via `edit-topic`): `auto`, `career`, `dating`, `family`, `finance`, `fitness`, `health`, `immigration`, `owner`, `tech`, `work`.
+
+## Manifest Contract
+
+The manifest is authoritative. When a manifest exists, **do not** auto-load every file in the matching topic folder. Folder scans are only for reporting uncurated candidates so the owner can promote them with `edit-topic`.
+
+Required sections:
+
+- `## Hot`
+- `## Warm`
+- `## Cold`
+- `## Archive`
+- `## Topic-specific notes`
+
+Each tier section may contain links or path bullets pointing at Auto-Wiki entity files, main-vault files, or main-vault directories. Bullets are typically of the form:
+
+```markdown
+- `wiki/entities/<topic>/<slug>.md` — <description>
+- `~/obsidian-vaul/<Folder>/<File>.md` — <description>
+```
+
+Markdown links (`[Name](path.md)`) are also accepted; strip optional `<...>` and resolve relative paths from the manifest file.
+
+Do not support the legacy flat sections `## Auto-Wiki entities` / `## Main Obsidian vault` after migration. If a manifest still has them, report it and fall back to auto-discovery mode for that topic until the owner runs `edit-topic` migration.
+
+## Tier Semantics
+
+| Tier | Entity read mode | Main-vault read mode |
+|------|------------------|----------------------|
+| `Hot` | Size preflight first, then full top-level entity file only if it fits the Hot budget; otherwise capsule + H2 outline with body deferred. | Size preflight first, then full file only if it fits the Hot budget. For directories: read `_about.md` and `index.md`, then only files explicitly listed as Hot. |
+| `Warm` | Autoload capsule only: frontmatter through `<!-- ginarr:autoload-end -->`. If the marker is missing, read only frontmatter, H1, first paragraph, and the first three H2 sections, then flag the file as needing a capsule. | `_about.md`, `index.md`, or the first useful summary block only. |
+| `Cold` | No body read. Use manifest suffix or frontmatter `description:` for the ready-state report only. | No body read. Use manifest suffix or index entry only. |
+| `Archive` | Not read at startup. Listed in the report as skipped historical context. Read later only on explicit request or grounded suspicion from search/index evidence. | Not read at startup. |
+
+Global overrides:
+
+- `wiki/entities/_owner.md` is loaded for every topic as a Warm-style autoload capsule (it is slim by design). Deep owner details live under `wiki/entities/_owner/` and are read only on explicit request.
+- Any file under an `_archive/` folder is treated as `Archive` even if listed elsewhere. Report the mismatch.
+- Any entity whose frontmatter `status:` is `archived`, `closed`, `done`, `dropped`, `retired`, `superseded`, `banned`, `unmatched`, `passed`, or `scam-closed` should not be read beyond the autoload capsule unless it is explicitly Hot and the current task needs the old detail. Report it as status-closed.
+- Companion folders next to an entity file (e.g. `anfisa/` next to `anfisa.md`) are never auto-loaded. Read them only on explicit request or when a loaded file points to a specific companion file needed for the task.
+
+## Autoload Capsule
+
+Entity pages are split into a startup capsule and deeper notes:
+
+```markdown
+---
+name: <Name>
+description: <one-line description>
+status: active
+topics: [<topic>]
+...
+---
+
+# <Name>
+
+<one-line description>
+
+## Brief
+
+- <stable summary>
+
+## Current State
+
+- <live state>
+
+## Open Questions
+
+- <open question or "None.">
+
+<!-- ginarr:autoload-end -->
+
+## Facts
+
+...
+```
+
+For Warm entities, read only through the marker. If the marker is missing, fall back to: frontmatter + H1 + first paragraph + first three H2 sections, and flag the file in the report as needing a capsule.
+
+For Hot entities, always run the size preflight before deciding whether to full-read.
+
+## Hot Size Preflight
+
+Before reading any Hot file body, measure it with Bash:
+
+```bash
+wc -l -c "$path"
+```
+
+Default thresholds:
+
+| Size | Startup read mode |
+|------|-------------------|
+| `<= 250` lines and `<= 50 KB` | Full read. |
+| `251-1000` lines or `50-200 KB` | Read the autoload capsule plus an H2 outline; defer body sections. |
+| `> 1000` lines or `> 200 KB` | Read the autoload capsule only, plus H2 outline if cheap; defer all body sections. |
+
+If a topic has many Hot entries, be stricter: preserve the small active working set rather than full-reading every borderline file.
+
+For deferred Hot files, gather startup shape with targeted commands instead of reading the full file:
+
+```bash
+sed -n '1,/<!-- ginarr:autoload-end -->/p' "$path"
+rg -n '^## ' "$path"
+```
+
+If the autoload marker is missing on a Hot file, read only frontmatter, H1, first paragraph, and an H2 outline, then report that the Hot file needs a capsule.
 
 ## Workflow
 
 ### 1. Resolve topic name
 
-Args: `<name>` (mandatory). Match against:
+Args: `<name>` (mandatory; snake_case). Match against:
 
 1. Existing manifest: `wiki/topics/<name>.md`
-2. Existing folder: `wiki/entities/<name>/`
+2. Existing topic folder: `wiki/entities/<name>/`
 
-If neither exists → fall through to **auto-discovery mode** (see step 5).
+If neither exists, fall through to **auto-discovery mode** (step 8). Do not load a whole folder by default in auto-discovery either.
 
-### 2. Read the manifest
+### 2. Read and parse the manifest
 
-Read `wiki/topics/<name>.md`. Parse:
+Read `$GINARR_VAULT_ROOT/wiki/topics/<name>.md`. Parse:
 
-- Frontmatter (`topic`, `description`).
-- `## Auto-Wiki entities` — explicit entity-page paths.
-- `## Main Obsidian vault` — paths in the main vault to read.
-- `## Topic-specific notes` — instructions / context for the assistant.
+- Frontmatter (`topic`, `description`)
+- Topic summary below the H1
+- `## Hot`, `## Warm`, `## Cold`, `## Archive`
+- `## Topic-specific notes`
+- Any other free section (e.g. `## Skills`) → preserved verbatim in the ready-state report under "Notes from manifest"
 
-If manifest is missing but folder exists → use folder contents as the entity list and skip main-vault paths.
+For each tier bullet, extract:
 
-### 3. Walk the entity folder
+- display label
+- target path
+- optional description suffix after ` — `
+- resolved path
+- path kind: entity file, main-vault file, main-vault directory, missing
+
+Missing paths are reported and skipped — do not fail the whole load.
+
+If the manifest still uses the legacy flat sections `## Auto-Wiki entities` / `## Main Obsidian vault`, report it and treat every entity bullet as Warm, every main-vault bullet as Cold, until the owner migrates with `edit-topic`.
+
+### 3. Load `_owner.md`
+
+Read `$GINARR_VAULT_ROOT/wiki/entities/_owner.md` through the autoload marker (or, if marker missing, the slim portion: frontmatter + H1 + first paragraph + first three H2 sections). If missing entirely, report it but continue.
+
+### 4. Load Hot
+
+For each Hot entry:
+
+- **Entity file**: run `wc -l -c` first. Full-read only if at or below the Hot threshold. If larger, read capsule plus H2 outline and note deferred body sections in the report.
+- **Main-vault Markdown/text file**: run `wc -l -c` first. Full-read only if at or below the Hot threshold; if larger, read first meaningful summary + H2 outline.
+- **Main-vault directory**: read `_about.md` and `index.md`; do not sample arbitrary recent files. If specific child files matter, list them explicitly as Hot bullets.
+
+### 5. Load Warm
+
+For each Warm entry:
+
+- **Entity file**: read only the autoload capsule through `<!-- ginarr:autoload-end -->`. If marker missing, frontmatter + H1 + first paragraph + first three H2 sections; flag in report.
+- **Main-vault file**: read only the autoload capsule if present, otherwise a small summary excerpt.
+- **Main-vault directory**: read `_about.md` and `index.md` only.
+
+### 6. Register Cold and Archive
+
+For each Cold entry, keep only manifest label, target path, and description suffix. If the suffix is missing and an adjacent `index.md` has an entry description, use that. Do not read the target body.
+
+For each Archive entry, keep only label, path, and suffix. Do not read at startup. During the later conversation, read an Archive target only when the owner asks directly or when search / index evidence makes it likely to answer the current question.
+
+### 7. Report uncurated candidates
+
+After manifest loading, scan the matching topic folder and cross-tagged entities to find top-level entity files not listed in any tier:
 
 ```bash
 find "$GINARR_VAULT_ROOT/wiki/entities/<name>/" \
@@ -62,116 +208,92 @@ find "$GINARR_VAULT_ROOT/wiki/entities/<name>/" \
   -type f -name "*.md" \
   -not -name "_about.md" \
   -not -name "index.md"
+
+grep -rl "^topics:.*\b<name>\b" "$GINARR_VAULT_ROOT/wiki/entities/" \
+  | grep -v "/<name>/"
 ```
 
-Collect every entity at the **top level** of the topic folder. `-maxdepth 1` is the entire mechanism — any subfolder (per-entity detail folder, `_archive/`, anything else) is automatically skipped. No special-casing needed.
+Only report candidate paths and frontmatter `description:` (cheap to obtain via `sed -n '1,/^---/p'`). Do not load their bodies. The owner can promote them via `edit-topic add <name> <Tier> <path>`.
 
-Combine with the manifest's explicit list (deduplicate). Manifest entries pointing into a subfolder (e.g. `_archive/` listed under `## Archive` for human navigation) are likewise ignored by the default walk; the operator browses them by explicit `Read` if needed.
+### 8. Auto-discovery fallback
 
-### 4. Walk cross-tagged entities
+If no manifest exists:
 
-Find entities elsewhere whose `topics:` frontmatter includes `<name>`:
+1. Read entity frontmatter (`name`, `description`, `status`) and autoload capsules only.
+2. Read relevant `index.md` files in `$GINARR_VAULT_ROOT/wiki/` and the main vault under `~/obsidian-vaul/`.
+3. Propose a tiered manifest draft with a small Hot set (a handful of the highest-`status`/most-recent entities), broader Warm set (the rest of the folder), and main-vault directories as Cold or Warm.
+4. Ask the owner whether to save it through `edit-topic create`. Do not write without confirmation.
 
-```bash
-grep -rl "^topics:.*${name}" "$GINARR_VAULT_ROOT/wiki/entities/" | grep -v "/${name}/"
-```
-
-Add to the load list.
-
-### 5. Auto-discovery fallback (when no manifest and no folder)
-
-If `<name>` doesn't match any existing topic, the skill:
-
-1. Reads **all** entity-page descriptions (frontmatter `name` + `description` line + first paragraph) — at the current vault scale (~25-50 entities), this fits in context.
-2. Asks the LLM (itself) which subset is plausibly relevant to the topic name.
-3. Reads index.md files in the main vault for additional candidate paths.
-4. Reports the auto-discovered list:
-   `Manifest not found. Best-effort discovery for "<name>": <N> entities, <M> main-vault paths. Save as wiki/topics/<name>.md? [y/n]`
-5. If owner confirms `y`, hand off to `edit-topic` to create the manifest.
-
-### 6. Read everything (two-level)
-
-For each path in the load list, decide read depth from the entity's `status:` frontmatter:
-
-**Active statuses → full `Read`:**
-
-`opener-drafted`, `opener-sent`, `opener-pending`, `in-conversation`, `met`, `dating`, `live`, `verified-real`, `active`, `live-channel`.
-
-**Non-active or missing status → summary read** (`Read` with `limit: 30`):
-
-Anything else — `paused`, `paused-no-initiation`, `idle`, `profile-only`, `just-matched`, no `status:` field at all (platform pages, reference pages). Captures frontmatter + first paragraph + first one or two H2 headers, which is enough to know what the entity is and decide whether to load it fully later.
-
-If during the conversation the assistant needs the full body of a summary-mode entity (e.g. owner asks specifically about it), `Read` it without `limit:` on the spot.
-
-**Special files:**
-
-- `_owner.md` is loaded for every topic — root-level central self-page. Always full read of `_owner.md` (slim by design); the deep companion lives at `wiki/entities/_owner/_owner_full.md` and is **not** auto-loaded — read on explicit request.
-- Main-vault path: if a single file, `Read` it; if a directory, list contents and read its `_about.md` and `index.md`, then sample the most-recently-modified files (top 5 by mtime).
-
-### 7. Report
+### 9. Ready-state report
 
 Print a structured summary:
 
-```
-Topic: <name> — <description from manifest>
+```text
+Topic: <name> — <description>
 
-Entities loaded full (<N>):
-  <topic>/<slug>           — <one-line description>  [<status>]
-  ...
+Hot loaded full (<N>):
+  <path> — <description> [<status>]
 
-Entities loaded as summary (<M>):
-  <topic>/<slug>           — <one-line description>  [<status or none>]
-  ...
+Hot deferred (<D>):
+  <path> — <description> [<status>, <lines> lines / <bytes> bytes; capsule + outline]
 
-Archive (skipped, <K> files):
-  _archive/<slug>          — <one-line description>
-  ...
+Warm capsules loaded (<M>):
+  <path> — <description> [<status>]
 
-Main vault paths loaded (<P>):
-  ~/obsidian-vaul/<path>   — <one-line context>
-  ...
+Cold visible (<K>):
+  <path> — <description>
+
+Archive skipped (<A>):
+  <path> — <description>
+
+Uncurated candidates (<U>):
+  <path> — <description>
 
 Notes from manifest:
-  <each bullet from ## Topic-specific notes>
+  <each bullet from ## Topic-specific notes and any free sections>
 ```
 
-End with a one-line ready signal: `Ready to work on "<name>".`
+End with one line: `Ready to work on "<name>".`
 
 ## Boundaries
 
-- **Read scope**: `wiki/topics/<name>.md`, top-level `.md` files in `wiki/entities/<name>/` (no sub-folder recursion), paths listed in the manifest's `## Main Obsidian vault` section, plus `wiki/entities/_owner.md`.
-- **Write scope**: none. The skill is read-only. Manifest creation goes through `edit-topic`.
+- **Read scope**: the named manifest, listed paths in its tiers, `_owner.md`, cheap folder / cross-tag scans for candidate reporting, and `index.md` files needed to describe Cold entries.
+- **Write scope**: none. Manifest creation or tier changes go through `edit-topic`.
 - **No web access.**
-- **Vendor-neutral**: no Claude-Code internals (no `claude --resume`, no `~/.claude/projects/`). Pure file reads.
+- **Vendor-neutral**: pure file reads. No Claude-Code session internals.
 
 ## Companion-file conventions
 
-One contract: an entity is a single `.md` file at the top level of its topic folder. If the entity has long-form details (chronologies, transcripts, deep notes), they go into a sibling sub-folder named after the entity slug. The skill loads only top-level `.md` files; any sub-folder — for any reason — is automatically skipped.
+One contract: an entity is a single `.md` file at the top level of its topic folder. If the entity has long-form details, they go into a sibling sub-folder named after the entity slug. `load-topic` never auto-loads sibling folders.
 
-- `wiki/entities/<topic>/<slug>.md` — entity (auto-loaded).
-- `wiki/entities/<topic>/<slug>/` — per-entity detail folder. Contents (e.g. `<slug>_full.md`, `<slug>_log.md`, transcript dumps) are **not** auto-loaded; read on demand.
+- `wiki/entities/<topic>/<slug>.md` — entity (auto-loadable via manifest).
+- `wiki/entities/<topic>/<slug>/` — per-entity detail folder. Contents (`<slug>_full.md`, `<slug>_log.md`, transcript dumps) are **not** auto-loaded; read on demand.
 - `wiki/entities/_owner.md` + `wiki/entities/_owner/` — same pattern at the entities root.
-- `wiki/entities/<topic>/_archive/` — closed-funnel files (`closed`, `banned`, `unmatched`, `passed`, `passé`, `scam-closed`). Same `-maxdepth 1` skip; not a special case.
+- `wiki/entities/<topic>/_archive/` — closed-funnel files. Skipped by default; reachable as Archive entries or on explicit Read.
 
-Don't confuse `wiki/entities/_owner/` (per-entity details for the slim `_owner.md`) with `wiki/entities/owner/` (a topic-folder for owner-related entities like `chair_search`, `pfu_digitization`). Different things; the leading underscore matters.
+Don't confuse `wiki/entities/_owner/` (per-entity details for the slim `_owner.md`) with `wiki/entities/owner/` (a topic-folder for owner-related entities like `pfu_digitization`). Different things; the leading underscore matters.
 
 ## Don't
 
-- **Don't load `wiki/_pending.md`** — that's review-flow territory. If owner wants to see pending captures, they invoke `/review` separately.
+- **Don't load `wiki/_pending.md`** — that's review-flow territory. Use `/review` separately.
 - **Don't load `wiki/_health/`** — those are `lint-wiki` reports, not topic content.
-- **Don't write the manifest** when running auto-discovery without owner confirmation. Auto-save would create stale manifests on every speculative `<name>` invocation.
+- **Don't load every matching topic-folder entry** when a manifest exists. Manifest is authoritative.
+- **Don't auto-load `_archive/`** or companion folders at startup.
+- **Don't use Cold as a hidden Warm.** Cold is map-only.
+- **Don't write a manifest** from auto-discovery without owner confirmation.
 - **Don't double-load `_owner.md`** — load once even if multiple paths reference it.
-- **Don't auto-load anything in a sub-folder of a topic** — entities live at the top level only. Sub-folders (per-entity detail folders, `_archive/`, etc.) exist precisely to keep the default load slim. Reach for them only on explicit owner request or when the conversation needs the depth.
+- **Don't silently reinterpret legacy flat manifest sections** as new contract. Report and degrade.
 
 ## When to invoke
 
 - **Session start** for any topic-scoped work: open new Claude Code session, first turn `/load-topic <name>`.
 - **Mid-session topic switch** is supported but blunt — the prior topic's context stays in the window. Cleaner: end session, open new one, `/load-topic <new-name>`.
-- **Backfill of a new topic**: invoke once after `edit-topic --create` to verify the manifest loads cleanly.
+- **Backfill of a new topic**: invoke once after `edit-topic create` to verify the manifest loads cleanly.
+- **After heavy manifest edits** — verify the load shape.
 
 ## See also
 
 - `docs/skills/load-topic.md` — operator doc.
 - `docs/skills/edit-topic.md` — manifest curator (sibling skill).
-- `wiki/topics/_about.md` — manifest format.
+- `wiki/topics/_about.md` — manifest format notes.
 - `feedback_ginarr_vendor_neutral.md` (private memory) — why no `claude --resume` wrappers.

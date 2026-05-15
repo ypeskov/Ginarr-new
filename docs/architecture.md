@@ -104,11 +104,23 @@ The chain is intentionally sequential (`summarize-day` → `ingest-and-weave`) b
 
 A separate layer on top of the entity model that solves "load this topic's full state into the current session" without coupling to runtime-specific session mechanisms.
 
-- **Manifests** at `wiki/topics/<name>.md` curate the entity pages and main-vault paths relevant to each topic, plus topic-specific notes for the assistant.
-- [`load-topic`](skills/load-topic.md) — reads a manifest, walks `wiki/entities/<name>/`, finds cross-tagged entities (`topics:` includes `<name>`), reads listed main-vault paths, prints a structured ready-state. Auto-discovery fallback when no manifest exists. Read-only.
-- [`edit-topic`](skills/edit-topic.md) — list / show / create / add / remove / rename operations on `wiki/topics/<name>.md`. Validates referenced paths.
+- **Tiered manifests** at `wiki/topics/<name>.md` sort the entity pages and main-vault paths relevant to each topic into **Hot / Warm / Cold / Archive** context tiers, plus topic-specific notes for the assistant. Owner-curated.
+- [`load-topic`](skills/load-topic.md) — reads the manifest, loads Hot deeply (with `wc -l -c` preflight), Warm as autoload capsules, Cold as visible references, Archive as skipped historical context. Always-on capsule for `_owner.md`. Scans for uncurated candidates (folder + cross-tag matches) and reports them. Read-only.
+- [`edit-topic`](skills/edit-topic.md) — list / show / create / add / move / remove / rename operations on `wiki/topics/<name>.md`. Validates referenced paths and tier names.
 
 Per-topic context loading lives at the **skill** layer, not at the runtime-session layer — vendor-neutral by design (works the same on Claude Code, Junie, OpenCode + oh-my-opencode). New session + `/load-topic <name>` is the canonical pattern; no UUID maps, no `claude --resume` wrappers.
+
+### Entity autoload capsule
+
+Entity pages are split into a stable startup capsule and deeper body, separated by a marker line:
+
+```markdown
+<!-- ginarr:autoload-end -->
+```
+
+Everything above the marker is the autoload capsule (typically frontmatter, H1, and `## Brief` / `## Current State` / `## Open Questions` blocks). `load-topic` reads only the capsule for Warm-tier entries, and uses the marker as a stop point for size-deferred Hot reads. Pages without the marker fall back to "frontmatter + H1 + first paragraph + first three H2 sections" and are flagged in the ready-state report as needing a capsule — they can be retrofitted incrementally as the owner or `capture` / `ingest-and-weave` touch them.
+
+The capsule convention is documented for entity-page authors in `wiki/entities/_about.md`.
 
 ## Auxiliary skills
 
