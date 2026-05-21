@@ -45,20 +45,27 @@ description: <one-line description>
 <one-paragraph summary>
 
 ## Hot
-- `wiki/entities/<topic>/<slug>.md` — <why hot>
+- [[<slug>]] — <why hot>
 
 ## Warm
-- `wiki/entities/<topic>/<slug>.md` — <why warm>
+- [[<slug>]] — <why warm>
 
 ## Cold
-- `~/obsidian-vaul/<Folder>/` — <what is there>
+- [[<Folder>/index|<Folder>/]] — <what is there>
 
 ## Archive
-- `wiki/entities/<topic>/_archive/<slug>.md` — <historical context>
+- [[<archived_slug>]] — <historical context>
 
 ## Topic-specific notes
 - <instruction or context that applies whenever this topic is loaded>
 ```
+
+Bullet form rules:
+
+- **Entity files** (`wiki/entities/.../<slug>.md`): `[[<slug>]]` — basenames under `wiki/entities/` are unique, so the short form resolves inside Obsidian. Fall back to `[[Auto-Wiki/wiki/entities/<topic>/<slug>|<slug>]]` only on collision (note the `Auto-Wiki/` prefix — the path is relative to the Obsidian vault root, not the Auto-Wiki sub-folder).
+- **Main-vault files** (`~/obsidian-vaul/<Folder>/<file>.md`, excluding `Auto-Wiki/`): `[[<file>]]` if unambiguous across the whole Obsidian vault; otherwise the path form `[[<Folder>/<file>|<file>]]`.
+- **Main-vault folders**: `[[<Folder>/index|<Folder>/]]` — every main-vault folder owns an `index.md` (folder note), so the wikilink opens the folder note in Obsidian. The trailing slash in the display label signals "this is a folder."
+- **Entity companion folders** (`wiki/entities/<topic>/<slug>/`): stay backticked — they have no folder note.
 
 Free-form extra sections (`## Skills` in `fitness.md` is the canonical example) are passed through unchanged into the load-topic ready-state report.
 
@@ -68,6 +75,7 @@ Free-form extra sections (`## Skills` in `fitness.md` is the canonical example) 
 - Tier name: exactly `Hot`, `Warm`, `Cold`, or `Archive`. No synonyms.
 - Entity path: must exist as `*.md` under `wiki/entities/`.
 - Main-vault path: must exist under `~/obsidian-vaul/` (excluding `Auto-Wiki/`).
+- All navigable bullets (entity files, main-vault files, main-vault folders with `index.md`) must render as `[[wikilinks]]`. Backticked paths are reserved for entity companion folders and folders genuinely missing a folder note.
 - No duplicate paths across tiers within a manifest.
 - Frontmatter `topic:` must match the filename.
 
@@ -76,6 +84,16 @@ Free-form extra sections (`## Skills` in `fitness.md` is the canonical example) 
 If a manifest still uses the legacy flat sections `## Auto-Wiki entities` / `## Main Obsidian vault`, the first `add`/`move` invocation migrates it: Primary list → Hot, Secondary cross-tagged → Warm, main-vault paths → Cold (directories) or Warm (high-reuse single files), existing `## Archive` → Archive, free sections preserved.
 
 Can also be invoked explicitly: "migrate dating to tiered".
+
+## Migration: backtick paths → wikilinks (v2.1)
+
+Older v2.0 manifests rendered bullets as `` `<path>` `` — those don't navigate inside Obsidian. The skill rewrites them on the next `add`/`move`/`remove` against the manifest:
+
+- `` `wiki/entities/.../slug.md` `` → `[[slug]]`
+- `` `~/obsidian-vaul/<Folder>/<file>.md` `` → `[[<file>]]` (or path form on collision)
+- `` `~/obsidian-vaul/<Folder>/` `` → `[[<Folder>/index|<Folder>/]]` when `<Folder>/index.md` exists.
+
+Entity companion folders and folders without a folder note stay backticked. Idempotent.
 
 ## What it touches
 

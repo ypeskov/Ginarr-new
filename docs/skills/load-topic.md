@@ -39,6 +39,17 @@ Free-form extra sections (e.g. `## Skills` in `fitness.md`) are passed through v
 
 The legacy flat sections `## Auto-Wiki entities` and `## Main Obsidian vault` are not supported after migration — if encountered, the skill reports them and degrades to a conservative load (entity bullets → Warm, main-vault bullets → Cold).
 
+### Bullet forms
+
+`load-topic` accepts two bullet syntaxes inside the tier sections:
+
+- **Wikilink** (v2.1+, written by `edit-topic`):
+  - Short form `- [[<basename>]] — <desc>` — resolved by globbing `wiki/entities/**/<basename>.md` first, then the rest of the Obsidian vault (excluding `Auto-Wiki/`). Collisions: ambiguous → reported; resolved → loaded.
+  - Path form `- [[<vault-relative-path>|<display>]] — <desc>` — used for collisions and for folder bullets. Folder bullets look like `- [[<Folder>/index|<Folder>/]] — <desc>` (trailing slash in the display label) and resolve to the folder's `index.md`.
+- **Backticked path** (legacy v2.0): `` - `<path>` — <desc>`` for entity files, main-vault files, or directories. Still supported.
+
+Entity companion folders (`wiki/entities/<topic>/<slug>/`) and any folder genuinely lacking a folder note stay backticked.
+
 ## Tier semantics
 
 | Tier | Entity read mode | Main-vault read mode |
@@ -56,13 +67,41 @@ Global overrides:
 
 ## Entity autoload capsule
 
-Entity pages are split at:
+Entity pages are split at `<!-- ginarr:autoload-end -->`. The startup capsule is frontmatter, H1, and typically `## Brief`, `## Current State`, `## Open Questions`. Warm reads stop there. Hot reads may continue below the marker if the size preflight permits.
+
+Canonical capsule layout:
 
 ```markdown
-<!-- ginarr:autoload-end -->
-```
+---
+name: <Name>
+description: <one-line description>
+status: active
+topics: [<topic>]
+...
+---
 
-The startup capsule is frontmatter, H1, and typically `## Brief`, `## Current State`, `## Open Questions`. Warm reads stop there. Hot reads may continue below the marker if the size preflight permits.
+# <Name>
+
+<one-line description>
+
+## Brief
+
+- <stable summary>
+
+## Current State
+
+- <live state>
+
+## Open Questions
+
+- <open question or "None.">
+
+<!-- ginarr:autoload-end -->
+
+## Facts
+
+...
+```
 
 If a Warm entity is missing the marker, `load-topic` falls back to: frontmatter + H1 + first paragraph + first three H2 sections, and flags the file in the report as needing a capsule. Existing entity pages can be retrofitted incrementally — the convention is documented in [`wiki/entities/_about.md`](../../docs/architecture.md) (and reflected in `capture` / `ingest-and-weave` over time).
 

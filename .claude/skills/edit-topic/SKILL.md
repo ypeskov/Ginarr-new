@@ -9,7 +9,7 @@ description: >
   skill of `load-topic` (read-side).
 metadata:
   project: Ginarr
-  version: "2.0"
+  version: "2.1"
 allowed-tools: Bash, Read, Write, Edit, Glob
 ---
 
@@ -23,7 +23,11 @@ Topic manifests are the working-memory control plane. They decide which relevant
 
 - **Write scope**: `$GINARR_VAULT_ROOT/wiki/topics/<name>.md` only.
 - Filename convention: `snake_case.md` (CLAUDE.md ground rule). Examples: `dating.md`, `bg_residency.md` — never `Dating.md` or `BG Residency.md`.
-- Each manifest tier may contain Auto-Wiki entity links and main-vault links. Bullets are typically of the form ``- `<path>` — <description>``; Markdown link form `[Name](path.md)` is also accepted.
+- Each manifest tier may contain Auto-Wiki entity links and main-vault links. Bullet form depends on target type:
+  - **Auto-Wiki entity files** (`wiki/entities/.../<slug>.md`): write `` - [[<slug>]] — <description>`` so the bullet is navigable inside Obsidian. Basenames under `wiki/entities/` are unique by convention; if the same basename ever collides, fall back to the explicit path form `` - [[Auto-Wiki/wiki/entities/<topic>/<slug>|<slug>]] — <description>``.
+  - **Main-vault files** (`~/obsidian-vaul/<Folder>/<file>.md`, excluding `Auto-Wiki/`): write `` - [[<file>]] — <description>`` if the basename is unambiguous across the whole Obsidian vault; otherwise the path form `` - [[<Folder>/<file>|<file>]] — <description>``.
+  - **Directories** (main-vault folders, including subfolders): every main-vault folder owns an `index.md` (folder note). Write `` - [[<Folder>/index|<Folder>/]] — <description>`` so the bullet opens the folder note in Obsidian. The trailing slash in the display label signals "this is a folder." Only fall back to a backticked path if the folder genuinely has no `index.md` AND no equivalent folder note.
+  - **Entity companion folders** (`wiki/entities/<topic>/<slug>/`): stay backticked. They have no folder note and are not navigated as a unit from a manifest.
 
 ## Manifest Shape
 
@@ -43,25 +47,25 @@ description: <one-line description>
 
 Loaded deeply by `load-topic` (with size preflight). Keep small: active working-set entities, current plans, and the few main-vault paths needed almost every session.
 
-- `wiki/entities/<topic>/<slug>.md` — <why it is hot>
+- [[<slug>]] — <why it is hot>
 
 ## Warm
 
 Loaded as entity autoload capsules or main-vault summaries. Nearby context that is often useful but not always needed.
 
-- `wiki/entities/<topic>/<slug>.md` — <why it matters>
+- [[<slug>]] — <why it matters>
 
 ## Cold
 
 Listed in the ready-state report but not read by default. Known context the assistant should be aware exists.
 
-- `~/obsidian-vaul/<Folder>/` — <what is there>
+- [[<Folder>/index|<Folder>/]] — <what is there>
 
 ## Archive
 
 Historical or closed material. Indexed and visible, never loaded by default.
 
-- `wiki/entities/<topic>/_archive/<slug>.md` — <why it may matter later>
+- [[<archived_slug>]] — <why it may matter later>
 
 ## Topic-specific notes
 
@@ -115,7 +119,7 @@ Natural-language equivalents: "добавь anfisa в dating как Hot", "demot
    - If path is relative, resolve it relative to the manifest file first, then against `$GINARR_VAULT_ROOT`, then against `~/obsidian-vaul/`; if still ambiguous, ask the owner.
 4. Check the target is not already listed in any tier. If it is, use `move` instead.
 5. Insert the bullet into the requested tier, preserving alphabetical order if the existing list is alphabetical, else append.
-6. Render the path as a code-spanned bullet (``- `<path>` — <description>``) or as a Markdown link if the existing tier uses links — match the prevailing style.
+6. Render the bullet per the Layout rules: `[[<slug>]]` for entity files (or the explicit `[[Auto-Wiki/wiki/entities/<topic>/<slug>|<slug>]]` form on collision); `[[<file>]]` for unambiguous main-vault files (or the path form on collision); `[[<Folder>/index|<Folder>/]]` for main-vault folders that have an `index.md`. Only fall back to a backticked path when the target genuinely cannot be wikilinked (e.g. entity companion folder, folder without an `index.md`). Never wrap an entity file in backticks — Obsidian won't navigate that.
 7. Add a short suffix after ` — ` explaining why the path belongs in that tier. Derive it from frontmatter `description:`, the file's autoload capsule, H1, or an index entry. If no grounded description is available, omit the suffix rather than inventing.
 8. Write the updated manifest.
 9. Confirm: `Added <path> to <Tier> in wiki/topics/<name>.md`.
@@ -167,12 +171,23 @@ If a manifest still uses the legacy flat sections `## Auto-Wiki entities` / `## 
 
 This is invoked implicitly when `/edit-topic add` or `/edit-topic move` is run against a flat manifest — migrate first, then apply the operation. Or explicitly via natural language ("migrate dating to tiered").
 
+## Migration: backtick paths → wikilinks (v2.1)
+
+Older v2.0 manifests render bullets as `` - `<path>` — <desc> `` — those are not navigable inside Obsidian. On any `add` / `move` / `remove` against such a manifest, rewrite every navigable bullet to wikilink form before applying the operation:
+
+- `` - `wiki/entities/.../<slug>.md` — <desc>`` → `` - [[<slug>]] — <desc>``
+- `` - `~/obsidian-vaul/<Folder>/<file>.md` — <desc>`` → `` - [[<file>]] — <desc>`` (or path form on basename collision)
+- `` - `~/obsidian-vaul/<Folder>/` — <desc>`` → `` - [[<Folder>/index|<Folder>/]] — <desc>`` when `<Folder>/index.md` exists.
+
+Entity companion folders (`wiki/entities/<topic>/<slug>/`) and folders genuinely without an `index.md` stay backticked. Idempotent: bullets already in wikilink form are left alone.
+
 ## Validation Rules
 
 - Topic name: `snake_case`, ASCII, lowercase. No leading underscore. No slashes or spaces.
 - Tier name: exactly `Hot`, `Warm`, `Cold`, or `Archive`.
 - Entity path: must exist as `*.md` under `wiki/entities/`. `_about.md` and `index.md` are not entity entries.
 - Main-vault path: must exist as file or directory under `~/obsidian-vaul/` (excluding the `Auto-Wiki/` sub-folder).
+- All navigable bullets (entity files, main-vault files, main-vault folders with an `index.md`) must be rendered as `[[wikilinks]]`. Short form `[[<basename>]]` when unique across the Obsidian vault; otherwise the path form `[[Auto-Wiki/<vault-relative-path-without-ext>|<display>]]`. Backticked paths are reserved only for targets that cannot be wikilinked: entity companion folders, and folders genuinely missing a folder note.
 - No duplicate targets across tiers within a manifest.
 - Frontmatter `topic:` must match the filename (`<name>.md`).
 - Manifest body sections must use the canonical tier names. No synonyms (`Active`, `Reference`, `Historical`).
