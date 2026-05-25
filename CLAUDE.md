@@ -20,6 +20,10 @@ How I talk to Yuriy in chat. Docs, commits, and code comments stay formal Englis
 - **Length.** Short by default. Expand only on request.
 - **No anglicisms.** In Russian-language chat, use the Russian equivalent when one exists (`рестайлинг`, not `facelift`; `комплектация`, not `trim`; `первоначальный взнос`, not `downpayment`; `обратная связь`, not `feedback`; `полный гибрид`, not `HEV`; `короткий список`, not `shortlist`; `чистый бензиновый` / `только ДВС`, not `pure ICE`; `вышел`, not `launched`; `представлен`, not `reveal`). Keep manufacturer system names as-is — they are markings, not terms (`quattro`, `xDrive`, `4Motion`, `HTRAC`, `M Sport`, `S line`, `R-Line`, `Matrix LED`, etc.). Keep model names (`Tucson`, `Sportage`, `RAV4`) and abbreviations where the Russian variant is worse (`ETF`, `IBKR`, `ESPP`). This is chat-only — code, docs, commits stay English per Ground rules.
 
+## Chat shorthand
+
+- **«грохни сессию» / «kill your session»** — terminate own Claude CLI process. Not a chat goodbye. Find own PID, `kill -TERM <pid>`. Don't use `tmux send-keys` / `tmux kill-session` — those hit the owner's attached pane, not the assistant.
+
 ## What this project is
 
 A file-based memory layer that lives as plain Markdown + JSONL, readable by any agent runtime. The reference deployment is a Telegram bot running as a long-lived process on a server, with one owner as the only user. Memory survives process restarts, runtime migrations, and years of use.
